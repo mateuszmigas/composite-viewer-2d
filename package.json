@@ -1,0 +1,35 @@
+{
+  "name": "@mateuszmigas/viewer-2d",
+  "version": "0.0.1",
+  "description": "2D Viewier",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "files": [
+    "lib/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "examples-react": "yarn --cwd examples/react-host start",
+    "test": "jest --config jest.config.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mateuszmigas/viewer-2d"
+  },
+  "author": "Mateusz Migas",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mateuszmigas/viewer-2d/issues"
+  },
+  "homepage": "https://github.com/mateuszmigas/viewer-2d#readme",
+  "devDependencies": {
+    "@types/jest": "^26.0.10",
+    "jest": "^26.4.2",
+    "ts-jest": "^26.3.0",
+    "typescript": "4.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
