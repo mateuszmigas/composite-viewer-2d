@@ -1,11 +1,12 @@
 import React from "react";
 import "./App.css";
-import { adder } from "./viewer2d";
+import { Viewer2DHost } from "./Viewer2DHost";
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">{adder(2, 4)}</header>
+      <header className="App-header"></header>
+      <Viewer2DHost></Viewer2DHost>
     </div>
   );
 }
