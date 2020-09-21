@@ -7,7 +7,7 @@ export class Canvas2DSimpleRenderer implements Renderer {
   private canvasContext: CanvasRenderingContext2D;
   private canvasSize: Size = { width: 0, height: 0 };
   private viewport: Viewport = { position: { x: 0, y: 0 }, zoom: 1 };
-  private needsRender: boolean = false;
+  needsRender: boolean = false;
 
   constructor(hostElement: HTMLElement) {
     const canvas = createCanvasElement(hostElement, -99);
@@ -81,10 +81,6 @@ export class Canvas2DSimpleRenderer implements Renderer {
   }
 
   dispose(): void {}
-
-  needsRerender() {
-    return this.needsRender;
-  }
 
   private clearCanvas() {
     this.canvasContext.clearRect(

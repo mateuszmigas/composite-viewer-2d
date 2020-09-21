@@ -8,7 +8,7 @@ export type Renderer = {
   onViewportChanged(viewport: Viewport): void;
   setVisibility(visible: boolean): void;
   dispose(): void;
-  needsRerender(): boolean;
+  needsRender: boolean;
 };
 
 export type Unsubscribe = () => void;
