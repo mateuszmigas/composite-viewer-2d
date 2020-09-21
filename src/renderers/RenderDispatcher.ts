@@ -40,12 +40,6 @@ export class RenderDispatcher<TRenderPayload> {
     });
   }
 
-  setVisibleLayers(layersIds: string[]) {
-    //if (layersIds != this.visibleLayers) { todo
-    this.visibleLayers = [...layersIds];
-    this.renderers.forEach(r => (r.renderer.needsRender = true));
-  }
-
   render(renderPayload: TRenderPayload) {
     this.renderPayload = renderPayload;
     this.renderers.forEach(r => (r.renderer.needsRender = true));

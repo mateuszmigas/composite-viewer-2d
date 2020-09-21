@@ -1,3 +1,34 @@
-.App {
-  text-align: center;
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0px;
+}
+
+.app-container {
+  overflow-x: hidden;
+  overflow-y: hidden;
+  height: 100%;
+  display: grid;
+  grid-template-areas:
+    "title viewer"
+    "tools viewer";
+  grid-template-columns: 350px auto;
+  grid-template-rows: 50px auto;
+}
+
+.app-title {
+  grid-area: title;
+  background-color: burlywood;
+}
+
+.app-viewer {
+  grid-area: viewer;
+  background-color: rebeccapurple;
+  user-select: none;
+}
+
+.app-tools {
+  grid-area: tools;
+  background-color: blue;
 }
