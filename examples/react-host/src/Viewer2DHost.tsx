@@ -25,6 +25,10 @@ const randomColor = (): Color => {
   };
 };
 
+const foo = (item: number | (() => number)) => {};
+foo(() => 2);
+foo(2);
+
 export class Viewer2DHost extends React.PureComponent<
   Viewer2DHostProps,
   Viewer2DHostState
@@ -32,10 +36,6 @@ export class Viewer2DHost extends React.PureComponent<
   hostElement: React.RefObject<HTMLDivElement>;
   renderDispatcher!: RenderDispatcher<MyRenderPayload>;
   viewportManipulator!: ViewportManipulator;
-  viewport: Viewport = {
-    position: { x: 0, y: 0 },
-    zoom: 1,
-  };
 
   constructor(props: Viewer2DHostProps) {
     super(props);
@@ -46,13 +46,15 @@ export class Viewer2DHost extends React.PureComponent<
   componentDidMount() {
     if (this.hostElement.current === null) return;
 
+    const initialViewport = {
+      position: { x: 0, y: 0 },
+      zoom: 1,
+    };
+
     this.viewportManipulator = new ViewportManipulator(
       this.hostElement.current,
-      () => this.viewport,
-      (newViewport: Viewport) => {
-        this.viewport = newViewport;
-        this.renderDispatcher.setViewport(newViewport);
-      }
+      initialViewport,
+      (newViewport: Viewport) => this.renderDispatcher.setViewport(newViewport)
     );
 
     this.renderDispatcher = new RenderDispatcher(
@@ -71,7 +73,7 @@ export class Viewer2DHost extends React.PureComponent<
         },
       ]
     );
-    this.renderDispatcher.setViewport(this.viewport);
+    this.renderDispatcher.setViewport(initialViewport);
     this.renderDispatcher.render({
       someRectangles: [
         {

@@ -2,6 +2,7 @@ import { ZeroPosition } from "./../types/geometry";
 import { Position2D } from "../types/geometry";
 import { ThrottleHtmlManipulator } from "./ThrottleHtmlManipulator";
 import { Viewport, zoomAtPosition } from "../types/viewport";
+import { createReducer } from "../common/state";
 
 type Action =
   | {
@@ -37,28 +38,26 @@ const reducer = (action: Action, viewport: Viewport): Viewport => {
 export class ViewportManipulator extends ThrottleHtmlManipulator {
   private pointerPosition = ZeroPosition();
   private isMoving = false;
+  private actionReducer: (actions: Action[]) => Viewport;
 
   constructor(
     protected element: HTMLElement,
-    private getViewport: () => Viewport,
+    viewportProvider: Viewport | (() => Viewport),
     private onViewportChange: (newViewport: Viewport) => void
   ) {
     super(element);
+
+    this.actionReducer = createReducer(viewportProvider, reducer);
     this.registerEvent("mousedown", this.onMouseDown);
     this.registerEvent("mousemove", this.onMouseMove);
     this.registerEvent("mouseup", this.onMouseUp);
     this.registerEvent("mouseleave", this.onMouseLeave);
     this.registerEvent("wheel", this.onWheel);
-    this.registerEvent("keydown", this.onKeyPress);
     this.element.oncontextmenu = this.onContextMenu;
   }
 
   private dispatchActions = (actions: Action[]) => {
-    const newViewport = actions.reduce(
-      (viewport, action) => reducer(action, viewport),
-      this.getViewport()
-    );
-
+    const newViewport = this.actionReducer(actions);
     this.onViewportChange(newViewport);
   };
 
@@ -103,14 +102,6 @@ export class ViewportManipulator extends ThrottleHtmlManipulator {
         },
       },
     ]);
-  };
-
-  //todo global?
-  private onKeyPress = (e: KeyboardEvent) => {
-    if (e.keyCode === 70) {
-      //F
-      //navigateToSceneSelectedProducts(this.sceneId);
-    }
   };
 
   private onContextMenu = (e: MouseEvent) => {
