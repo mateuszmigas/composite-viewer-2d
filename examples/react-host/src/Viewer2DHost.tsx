@@ -1,12 +1,15 @@
 import React from "react";
-import { Color, Viewport } from "../../../lib/types/geometry";
 import {
   Canvas2DSimpleRenderer,
+  Color,
   RenderDispatcher,
   RenderRectangleObject,
+  Viewport,
+  ViewportManipulator,
 } from "./viewer2d";
 
 interface Viewer2DHostProps {}
+interface Viewer2DHostState {}
 
 type MyRenderPayload = {
   someRectangles: RenderRectangleObject[];
@@ -22,26 +25,45 @@ const randomColor = (): Color => {
   };
 };
 
-export const Viewer2DHost = (props: Viewer2DHostProps) => {
-  const hostElement = React.useRef<HTMLDivElement>(null);
-  const renderDispatcher = React.useRef<RenderDispatcher<MyRenderPayload>>();
-  const [viewport] = React.useState<Viewport>({
+export class Viewer2DHost extends React.PureComponent<
+  Viewer2DHostProps,
+  Viewer2DHostState
+> {
+  hostElement: React.RefObject<HTMLDivElement>;
+  renderDispatcher!: RenderDispatcher<MyRenderPayload>;
+  viewportManipulator!: ViewportManipulator;
+  viewport: Viewport = {
     position: { x: 0, y: 0 },
     zoom: 1,
-  });
+  };
 
-  React.useEffect(() => {
-    if (hostElement.current === null) return;
+  constructor(props: Viewer2DHostProps) {
+    super(props);
+    this.hostElement = React.createRef();
+    this.state = {};
+  }
 
-    renderDispatcher.current = new RenderDispatcher(
-      hostElement.current,
+  componentDidMount() {
+    if (this.hostElement.current === null) return;
+
+    this.viewportManipulator = new ViewportManipulator(
+      this.hostElement.current,
+      () => this.viewport,
+      (newViewport: Viewport) => {
+        this.viewport = newViewport;
+        this.renderDispatcher.setViewport(newViewport);
+      }
+    );
+
+    this.renderDispatcher = new RenderDispatcher(
+      this.hostElement.current,
       {
         renderMode: "onDemand",
       },
       [
         {
           name: "Canvas 2D",
-          renderer: new Canvas2DSimpleRenderer(hostElement.current),
+          renderer: new Canvas2DSimpleRenderer(this.hostElement.current, 100),
           payloadSelector: (payload: MyRenderPayload) => ({
             rectangles: payload.someRectangles,
           }),
@@ -49,25 +71,52 @@ export const Viewer2DHost = (props: Viewer2DHostProps) => {
         },
       ]
     );
-    renderDispatcher.current.setViewport(viewport);
-    renderDispatcher.current.render({
+    this.renderDispatcher.setViewport(this.viewport);
+    this.renderDispatcher.render({
       someRectangles: [
         {
           type: "Rectangle",
           containerId: "1",
-          x: 0,
-          y: 0,
+          x: 100,
+          y: 10,
           width: 50,
           height: 80,
           color: randomColor(),
         },
       ],
     });
+  }
 
-    return () => {
-      renderDispatcher.current?.dispose();
-    };
-  }, []);
+  // componentDidUpdate(prevProps: SceneProps) {
+  //   if (prevProps.viewport != this.props.viewport) {
+  //     this.renderDispatcher.setViewport(this.props.viewport);
+  //   }
+  //   if (
+  //     prevProps.products != this.props.products ||
+  //     prevProps.selectedProductsIds != this.props.selectedProductsIds
+  //   ) {
+  //     console.time("compare");
+  //     const path = getPatch(prevProps.products, this.props.products);
+  //     console.timeEnd("compare");
+  //     console.log("path", path);
 
-  return <div className="viewer-content" tabIndex={0} ref={hostElement}></div>;
-};
+  //     const arr1 = [...prevProps.products.values()];
+  //     const arr2 = [...this.props.products.values()];
+  //     console.time("comparearr");
+  //     compareArrs(arr1, arr2);
+  //     console.timeEnd("comparearr");
+  //     //render patch
+  //     this.renderScene();
+  //   }
+  // }
+
+  componentWillUnmount() {
+    this.renderDispatcher.dispose();
+  }
+
+  render() {
+    return (
+      <div className="viewer-content" tabIndex={0} ref={this.hostElement}></div>
+    );
+  }
+}

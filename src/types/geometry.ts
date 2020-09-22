@@ -3,6 +3,8 @@ export type Position2D = {
   y: number;
 };
 
+export const ZeroPosition = (): Position2D => ({ x: 0, y: 0 });
+
 export type Position3D = {
   x: number;
   y: number;
@@ -24,11 +26,6 @@ export type Size3D = {
   width: number;
   height: number;
   length: number;
-};
-
-export type Viewport = {
-  position: Position2D;
-  zoom: number;
 };
 
 export type Rectangle = Position2D & Size;

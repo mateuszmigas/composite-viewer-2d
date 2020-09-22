@@ -8,7 +8,7 @@ function App() {
       <div className="app-title">title</div>
       <div className="app-tools">tools</div>
       <div className="app-viewer">
-        <Viewer2DHost></Viewer2DHost>{" "}
+        <Viewer2DHost></Viewer2DHost>
       </div>
     </div>
   );

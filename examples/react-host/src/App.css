@@ -19,6 +19,7 @@ body,
 
 .app-title {
   grid-area: title;
+  position: relative; /* for canvas host */
   background-color: burlywood;
 }
 
@@ -31,4 +32,11 @@ body,
 .app-tools {
   grid-area: tools;
   background-color: blue;
+}
+
+.viewer-content {
+  display: flex;
+  height: 100%;
+  width: 100%;
+  outline: 0;
 }

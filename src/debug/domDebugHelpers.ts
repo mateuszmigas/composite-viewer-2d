@@ -29,11 +29,13 @@ const createPanel = (
   options: { renderMode: RenderMode }
 ): HTMLElement => {
   const div = document.createElement("div");
-  div.style.marginTop = "50px";
+  div.style.color = "white";
   div.style.background = "black";
   div.style.width = "fit-content";
   div.style.opacity = "0.75";
   div.style.zIndex = "1000";
+  div.style.height = "fit-content";
+  div.style.padding = "10px";
 
   renderers.forEach(r => {
     const input = document.createElement("input");

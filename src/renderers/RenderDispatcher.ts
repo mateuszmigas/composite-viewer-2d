@@ -1,7 +1,8 @@
 import { DebugInfo } from "../debug/domDebugHelpers";
 import { RenderMode, Unsubscribe } from "../types/common";
-import { Viewport, Rectangle } from "../types/geometry";
+import { Rectangle } from "../types/geometry";
 import { RendrerMap } from "../types/renderMap";
+import { Viewport } from "../types/viewport";
 import { observeElementBoundingRect } from "../utils/dom";
 
 export type Options = {

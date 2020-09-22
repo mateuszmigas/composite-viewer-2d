@@ -1,6 +1,7 @@
 import { Renderer } from "../types/common";
-import { Size, Viewport, Rectangle, Position2D } from "../types/geometry";
+import { Size, Rectangle } from "../types/geometry";
 import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
+import { Viewport } from "../types/viewport";
 import { createCanvasElement } from "../utils/dom";
 
 export class Canvas2DSimpleRenderer implements Renderer {
@@ -9,8 +10,8 @@ export class Canvas2DSimpleRenderer implements Renderer {
   private viewport: Viewport = { position: { x: 0, y: 0 }, zoom: 1 };
   needsRender: boolean = false;
 
-  constructor(hostElement: HTMLElement) {
-    const canvas = createCanvasElement(hostElement, -99);
+  constructor(hostElement: HTMLElement, zIndex: number) {
+    const canvas = createCanvasElement(hostElement, zIndex);
     const context = canvas.getContext("2d");
 
     if (context === null) throw Error("context is null");
