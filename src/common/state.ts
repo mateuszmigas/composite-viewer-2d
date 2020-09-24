@@ -2,17 +2,17 @@ import { isFunction } from "./typeGuards";
 
 export const createReducer = <TAction, TState>(
   stateProvider: TState | (() => TState),
-  reducer: (action: TAction, state: TState) => TState
-): ((actions: TAction[]) => TState) => {
-  const reduce = (actions: TAction[], state: TState) =>
-    actions.reduce((state, action) => reducer(action, state), state);
+  reducer: (state: TState, action: TAction) => TState
+) => {
+  const reduceMany = (state: TState, actions: TAction[]) =>
+    actions.reduce(reducer, state);
 
   if (isFunction(stateProvider)) {
-    return (actions: TAction[]) => reduce(actions, stateProvider());
+    return (actions: TAction[]) => reduceMany(stateProvider(), actions);
   } else {
     let currentState = { ...stateProvider };
     return (actions: TAction[]) => {
-      currentState = reduce(actions, currentState);
+      currentState = reduceMany(currentState, actions);
       return currentState;
     };
   }

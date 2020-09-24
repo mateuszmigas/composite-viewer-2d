@@ -7,6 +7,7 @@ import { observeElementBoundingRect } from "../utils/dom";
 
 export type Options = {
   renderMode: RenderMode;
+  workerFactory?: (name: string) => Worker;
 };
 
 const defaultOptions: Options = {

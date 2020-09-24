@@ -8,11 +8,25 @@ import {
   ViewportManipulator,
 } from "./viewer2d";
 
+const createWorker = (name: string) =>
+  new Worker("./my.worker", {
+    type: "module",
+    name: name, //todo pattern
+  });
+
+const w = createWorker("worker 2");
+w.postMessage("dupa");
+w.onmessage = e => {
+  console.log("message back");
+};
+
+//const worker = createCalculationWorker();
 interface Viewer2DHostProps {}
 interface Viewer2DHostState {}
 
 type MyRenderPayload = {
-  someRectangles: RenderRectangleObject[];
+  someRectangles1: RenderRectangleObject[];
+  someRectangles2: RenderRectangleObject[];
 };
 
 export const randomInteger = (min: number, max: number) =>
@@ -24,10 +38,6 @@ const randomColor = (): Color => {
     b: randomInteger(0, 255),
   };
 };
-
-const foo = (item: number | (() => number)) => {};
-foo(() => 2);
-foo(2);
 
 export class Viewer2DHost extends React.PureComponent<
   Viewer2DHostProps,
@@ -61,21 +71,32 @@ export class Viewer2DHost extends React.PureComponent<
       this.hostElement.current,
       {
         renderMode: "onDemand",
+        workerFactory: createWorker,
       },
       [
         {
-          name: "Canvas 2D",
+          name: "Canvas 2D 1aa",
           renderer: new Canvas2DSimpleRenderer(this.hostElement.current, 100),
           payloadSelector: (payload: MyRenderPayload) => ({
-            rectangles: payload.someRectangles,
+            rectangles: payload.someRectangles1,
           }),
+          runAsWorker: true,
           enabled: true,
+        },
+        {
+          name: "Canvas 2D 2",
+          renderer: new Canvas2DSimpleRenderer(this.hostElement.current, 101),
+          payloadSelector: (payload: MyRenderPayload) => ({
+            rectangles: payload.someRectangles2,
+          }),
+          enabled: false,
         },
       ]
     );
+
     this.renderDispatcher.setViewport(initialViewport);
     this.renderDispatcher.render({
-      someRectangles: [
+      someRectangles1: [
         {
           type: "Rectangle",
           containerId: "1",
@@ -86,31 +107,19 @@ export class Viewer2DHost extends React.PureComponent<
           color: randomColor(),
         },
       ],
+      someRectangles2: [
+        {
+          type: "Rectangle",
+          containerId: "2",
+          x: 200,
+          y: 30,
+          width: 50,
+          height: 80,
+          color: randomColor(),
+        },
+      ],
     });
   }
-
-  // componentDidUpdate(prevProps: SceneProps) {
-  //   if (prevProps.viewport != this.props.viewport) {
-  //     this.renderDispatcher.setViewport(this.props.viewport);
-  //   }
-  //   if (
-  //     prevProps.products != this.props.products ||
-  //     prevProps.selectedProductsIds != this.props.selectedProductsIds
-  //   ) {
-  //     console.time("compare");
-  //     const path = getPatch(prevProps.products, this.props.products);
-  //     console.timeEnd("compare");
-  //     console.log("path", path);
-
-  //     const arr1 = [...prevProps.products.values()];
-  //     const arr2 = [...this.props.products.values()];
-  //     console.time("comparearr");
-  //     compareArrs(arr1, arr2);
-  //     console.timeEnd("comparearr");
-  //     //render patch
-  //     this.renderScene();
-  //   }
-  // }
 
   componentWillUnmount() {
     this.renderDispatcher.dispose();

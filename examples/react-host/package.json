@@ -37,6 +37,7 @@
     ]
   },
   "devDependencies": {
-    "react-app-rewired": "^2.1.6"
+    "react-app-rewired": "^2.1.6",
+    "worker-plugin": "^4.0.3"
   }
 }

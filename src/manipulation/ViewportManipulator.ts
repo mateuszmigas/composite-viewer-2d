@@ -13,7 +13,7 @@ type Action =
   | { type: "zoomInAtPosition"; position: Position2D }
   | { type: "zoomOutAtPosition"; position: Position2D };
 
-const reducer = (action: Action, viewport: Viewport): Viewport => {
+const reducer = (viewport: Viewport, action: Action): Viewport => {
   switch (action.type) {
     case "translate": {
       return {
