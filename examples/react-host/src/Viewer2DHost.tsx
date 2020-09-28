@@ -6,6 +6,8 @@ import {
   RenderRectangleObject,
   Viewport,
   ViewportManipulator,
+  createCanvasElement,
+  WebWorkerRendererProxy,
 } from "./viewer2d";
 
 interface Viewer2DHostProps {}
@@ -29,6 +31,14 @@ const foo = (item: number | (() => number)) => {};
 foo(() => 2);
 foo(2);
 
+const createCanvasWorker = () =>
+  new Worker("./someworker.ts", {
+    type: "module",
+    name: "CanvasWorker",
+  });
+
+const w = createCanvasWorker();
+w.postMessage("cyci");
 export class Viewer2DHost extends React.PureComponent<
   Viewer2DHostProps,
   Viewer2DHostState
@@ -65,12 +75,25 @@ export class Viewer2DHost extends React.PureComponent<
       [
         {
           name: "Canvas 2D",
-          renderer: new Canvas2DSimpleRenderer(this.hostElement.current, 100),
+          renderer: new Canvas2DSimpleRenderer(
+            createCanvasElement(this.hostElement.current, 100)
+          ),
           payloadSelector: (payload: MyRenderPayload) => ({
             rectangles: payload.someRectangles,
           }),
           enabled: true,
         },
+        // {
+        //   name: "Canvas 2D offscreen",
+        //   renderer: new WebWorkerRendererProxy(
+        //     Canvas2DSimpleRenderer,
+        //     createCanvasElement(this.hostElement.current, 101)
+        //   ),
+        //   payloadSelector: (payload: MyRenderPayload) => ({
+        //     rectangles: payload.someRectangles,
+        //   }),
+        //   enabled: true,
+        // },
       ]
     );
     this.renderDispatcher.setViewport(initialViewport);

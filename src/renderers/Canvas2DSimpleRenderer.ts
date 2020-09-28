@@ -4,14 +4,34 @@ import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
 import { Viewport } from "../types/viewport";
 import { createCanvasElement } from "../utils/dom";
 
+//sheetSize
+//scene2d, worldSize:x,y, viewSize, viewport { zoom, offset }
+//scene3d, worldSize:x,y,z viewSize, camera: any
+//SceneRenderer2D
+//SceneRenderer3D
+
+//viewport { size, zoom, offset } View2D View3S
+//viewerCanvas 3000x2000\
 export class Canvas2DSimpleRenderer implements Renderer {
-  private canvasContext: CanvasRenderingContext2D;
+  private canvasContext:
+    | CanvasRenderingContext2D
+    | OffscreenCanvasRenderingContext2D;
+
   private canvasSize: Size = { width: 0, height: 0 };
   private viewport: Viewport = { position: { x: 0, y: 0 }, zoom: 1 };
   needsRender: boolean = false;
 
-  constructor(hostElement: HTMLElement, zIndex: number) {
-    const canvas = createCanvasElement(hostElement, zIndex);
+  // constructor(hostElement: HTMLElement, zIndex: number) {
+  //   const canvas = createCanvasElement(hostElement, zIndex);
+  //   const context = canvas.getContext("2d");
+
+  //   if (context === null) throw Error("context is null");
+
+  //   this.canvasContext = context;
+  //   this.canvasContext.globalCompositeOperation = "destination-over"; //todo check performance
+  // }
+
+  constructor(canvas: HTMLCanvasElement | OffscreenCanvas) {
     const context = canvas.getContext("2d");
 
     if (context === null) throw Error("context is null");
@@ -21,13 +41,13 @@ export class Canvas2DSimpleRenderer implements Renderer {
   }
 
   setVisibility(visible: boolean) {
-    this.canvasContext.canvas.style.visibility = visible
-      ? "visible"
-      : "collapse";
+    // this.canvasContext.canvas.style.visibility = visible
+    //   ? "visible"
+    //   : "collapse";
   }
 
   //todo canvas left
-  onResize(size: Rectangle): void {
+  setSize(size: Rectangle): void {
     const canvas = this.getCanvas();
     canvas.width = size.width;
     canvas.height = size.height;
@@ -35,7 +55,7 @@ export class Canvas2DSimpleRenderer implements Renderer {
     this.needsRender = true;
   }
 
-  onViewportChanged(viewport: Viewport) {
+  setViewport(viewport: Viewport) {
     this.viewport = { ...viewport };
     this.needsRender = true;
   }
