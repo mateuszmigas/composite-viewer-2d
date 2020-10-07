@@ -1,6 +1,10 @@
 import { ZeroPosition } from "./../types/geometry";
 import { Position2D } from "../types/geometry";
-import { ThrottleHtmlManipulator } from "./ThrottleHtmlManipulator";
+import {
+  EventHandler,
+  EventType,
+  ThrottleHtmlManipulator,
+} from "./ThrottleHtmlManipulator";
 import { Viewport, zoomAtPosition } from "../types/viewport";
 import { createReducer } from "../common/state";
 
@@ -35,6 +39,11 @@ const reducer = (viewport: Viewport, action: Action): Viewport => {
   }
 };
 
+type CustomHandler<T extends Event> = {
+  type: EventType;
+  handler: EventHandler<T>;
+};
+
 export class ViewportManipulator extends ThrottleHtmlManipulator {
   private pointerPosition = ZeroPosition();
   private isMoving = false;
@@ -43,7 +52,14 @@ export class ViewportManipulator extends ThrottleHtmlManipulator {
   constructor(
     protected element: HTMLElement,
     viewportProvider: Viewport | (() => Viewport),
-    private onViewportChange: (newViewport: Viewport) => void
+    private onViewportChange: (newViewport: Viewport) => void,
+    customization?: {
+      reducer: <TAction extends Action>(
+        action: TAction,
+        viewport: Viewport
+      ) => Viewport;
+      eventHandlers: CustomHandler<Event>[];
+    }
   ) {
     super(element);
 
@@ -53,7 +69,6 @@ export class ViewportManipulator extends ThrottleHtmlManipulator {
     this.registerEvent("mouseup", this.onMouseUp);
     this.registerEvent("mouseleave", this.onMouseLeave);
     this.registerEvent("wheel", this.onWheel);
-    this.element.oncontextmenu = this.onContextMenu;
   }
 
   private dispatchActions = (actions: Action[]) => {
@@ -102,9 +117,5 @@ export class ViewportManipulator extends ThrottleHtmlManipulator {
         },
       },
     ]);
-  };
-
-  private onContextMenu = (e: MouseEvent) => {
-    return false;
   };
 }

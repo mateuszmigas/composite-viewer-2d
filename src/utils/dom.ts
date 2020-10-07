@@ -29,3 +29,6 @@ export const createCanvasElement = (
   hostElement.appendChild(canvas);
   return canvas;
 };
+
+export const isOffscreenCanvasSupported = () =>
+  !!HTMLCanvasElement.prototype.transferControlToOffscreen;

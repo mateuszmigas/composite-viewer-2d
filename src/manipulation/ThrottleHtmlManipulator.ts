@@ -1,5 +1,5 @@
-type EventType = keyof HTMLElementEventMap;
-type EventHandler<T extends Event> = (event: T) => void;
+export type EventType = keyof HTMLElementEventMap;
+export type EventHandler<T extends Event> = (event: T) => void;
 
 export class ThrottleHtmlManipulator {
   animationFrameHandle = 0;

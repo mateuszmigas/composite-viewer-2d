@@ -1,6 +1,6 @@
 import { DebugInfo } from "../debug/domDebugHelpers";
 import { RenderMode, Unsubscribe } from "../types/common";
-import { Rectangle } from "../types/geometry";
+import { Rectangle, Size } from "../types/geometry";
 import { RendrerMap } from "../types/renderMap";
 import { Viewport } from "../types/viewport";
 import { observeElementBoundingRect } from "../utils/dom";
@@ -37,9 +37,7 @@ export class RenderDispatcher<TRenderPayload> {
   }
 
   setViewport(viewport: Viewport) {
-    this.renderers.forEach(renderer => {
-      renderer.renderer.onViewportChanged(viewport);
-    });
+    this.renderers.forEach(r => r.renderer.setViewport(viewport));
   }
 
   render(renderPayload: TRenderPayload) {
@@ -58,9 +56,8 @@ export class RenderDispatcher<TRenderPayload> {
     cancelAnimationFrame(this.animationFrameHandle);
   }
 
-  private resize(rectangle: Rectangle) {
-    this.renderers.forEach(renderer => renderer.renderer.onResize(rectangle));
-
+  private resize(size: Size) {
+    this.renderers.forEach(r => r.renderer.setSize(size));
     this.isReady = true;
   }
 

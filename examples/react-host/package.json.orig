@@ -38,7 +38,10 @@
   },
   "devDependencies": {
     "react-app-rewired": "^2.1.6",
+<<<<<<< HEAD
+=======
     "worker-loader": "^2.0.0",
+>>>>>>> 0874d44fb507051f91082358fd614321b7b2b278
     "worker-plugin": "^4.0.3"
   }
 }
