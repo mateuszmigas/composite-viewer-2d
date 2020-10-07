@@ -31,14 +31,15 @@ const foo = (item: number | (() => number)) => {};
 foo(() => 2);
 foo(2);
 
-const createCanvasWorker = () =>
+const createCanvasWorker = (name: string) =>
   new Worker("./someworker.ts", {
     type: "module",
-    name: "CanvasWorker",
+    name: name,
   });
 
-const w = createCanvasWorker();
-w.postMessage("cyci");
+// const w = createCanvasWorker();
+// w.postMessage("cyci");
+// w.onmessage = e => console.log("message back");
 export class Viewer2DHost extends React.PureComponent<
   Viewer2DHostProps,
   Viewer2DHostState
@@ -73,27 +74,28 @@ export class Viewer2DHost extends React.PureComponent<
         renderMode: "onDemand",
       },
       [
-        {
-          name: "Canvas 2D",
-          renderer: new Canvas2DSimpleRenderer(
-            createCanvasElement(this.hostElement.current, 100)
-          ),
-          payloadSelector: (payload: MyRenderPayload) => ({
-            rectangles: payload.someRectangles,
-          }),
-          enabled: true,
-        },
         // {
-        //   name: "Canvas 2D offscreen",
-        //   renderer: new WebWorkerRendererProxy(
-        //     Canvas2DSimpleRenderer,
-        //     createCanvasElement(this.hostElement.current, 101)
+        //   name: "Canvas 2D",
+        //   renderer: new Canvas2DSimpleRenderer(
+        //     createCanvasElement(this.hostElement.current, 100)
         //   ),
         //   payloadSelector: (payload: MyRenderPayload) => ({
         //     rectangles: payload.someRectangles,
         //   }),
         //   enabled: true,
         // },
+        {
+          name: "Canvas 2D offscreen",
+          renderer: new WebWorkerRendererProxy(
+            Canvas2DSimpleRenderer,
+            createCanvasElement(this.hostElement.current, 101),
+            () => createCanvasWorker("someworker2")
+          ),
+          payloadSelector: (payload: MyRenderPayload) => ({
+            rectangles: payload.someRectangles,
+          }),
+          enabled: true,
+        },
       ]
     );
     this.renderDispatcher.setViewport(initialViewport);

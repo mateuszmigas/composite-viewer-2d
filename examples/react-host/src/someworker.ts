@@ -1,10 +1,5 @@
-/* eslint-disable */
-//@ts-ignore
-const calculationWorker: Worker = self as any;
+/* eslint-disable */ //cra disable warning
+import { exposeToProxy } from "./viewer2d";
 
-calculationWorker.addEventListener("message", event => {
-  let x = 3;
-  console.log("cycki222");
-
-  calculationWorker.postMessage("FSE111111111111111S'");
-});
+const renderWorker: Worker = self as any;
+exposeToProxy(renderWorker, ["renderer1", "renderer2"]);
