@@ -41,7 +41,7 @@ const createPanel = (
     const input = document.createElement("input");
     input.type = "checkbox";
     input.id = r.name;
-    input.checked = r.enabled;
+    input.checked = !!r.enabled;
     input.onchange = () => {
       r.enabled = input.checked;
       r.renderer.setVisibility(r.enabled);

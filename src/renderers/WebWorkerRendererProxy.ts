@@ -11,7 +11,7 @@ export class WebWorkerRendererProxy implements Renderer {
     rendererType: {
       new (canvas: HTMLCanvasElement | OffscreenCanvas): Renderer;
     },
-    canvas: HTMLCanvasElement,
+    private canvas: HTMLCanvasElement,
     workerFactory: () => Worker
   ) {
     const isOffSu = isOffscreenCanvasSupported();
@@ -53,7 +53,7 @@ export class WebWorkerRendererProxy implements Renderer {
   }
 
   setVisibility(visible: boolean): void {
-    //throw new Error("Method not implemented.");
+    this.canvas.style.visibility = visible ? "visible" : "collapse";
   }
 
   dispose(): void {
@@ -115,8 +115,6 @@ export const exposeToProxy = (worker: Worker, customRenderers?: string[]) => {
       }
       case "setViewport": {
         internalRenderer.setViewport(eventData.viewport);
-        console.log("setting viewport", eventData.viewport);
-
         break;
       }
       case "render": {

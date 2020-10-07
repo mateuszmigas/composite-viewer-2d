@@ -14,7 +14,8 @@ interface Viewer2DHostProps {}
 interface Viewer2DHostState {}
 
 type MyRenderPayload = {
-  someRectangles: RenderRectangleObject[];
+  someRectangles1: RenderRectangleObject[];
+  someRectangles2: RenderRectangleObject[];
 };
 
 export const randomInteger = (min: number, max: number) =>
@@ -74,16 +75,16 @@ export class Viewer2DHost extends React.PureComponent<
         renderMode: "onDemand",
       },
       [
-        // {
-        //   name: "Canvas 2D",
-        //   renderer: new Canvas2DSimpleRenderer(
-        //     createCanvasElement(this.hostElement.current, 100)
-        //   ),
-        //   payloadSelector: (payload: MyRenderPayload) => ({
-        //     rectangles: payload.someRectangles,
-        //   }),
-        //   enabled: true,
-        // },
+        {
+          name: "Canvas 2D",
+          renderer: new Canvas2DSimpleRenderer(
+            createCanvasElement(this.hostElement.current, 100)
+          ),
+          payloadSelector: (payload: MyRenderPayload) => ({
+            rectangles: payload.someRectangles1,
+          }),
+          enabled: true,
+        },
         {
           name: "Canvas 2D offscreen",
           renderer: new WebWorkerRendererProxy(
@@ -92,7 +93,7 @@ export class Viewer2DHost extends React.PureComponent<
             () => createCanvasWorker("someworker2")
           ),
           payloadSelector: (payload: MyRenderPayload) => ({
-            rectangles: payload.someRectangles,
+            rectangles: payload.someRectangles2,
           }),
           enabled: true,
         },
@@ -100,12 +101,23 @@ export class Viewer2DHost extends React.PureComponent<
     );
     this.renderDispatcher.setViewport(initialViewport);
     this.renderDispatcher.render({
-      someRectangles: [
+      someRectangles1: [
         {
           type: "Rectangle",
           containerId: "1",
           x: 100,
           y: 10,
+          width: 50,
+          height: 80,
+          color: randomColor(),
+        },
+      ],
+      someRectangles2: [
+        {
+          type: "Rectangle",
+          containerId: "1",
+          x: 110,
+          y: 20,
           width: 50,
           height: 80,
           color: randomColor(),

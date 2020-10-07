@@ -1,3 +1,4 @@
+import { hasPropertyInChain } from "../common/typeGuards";
 import { Renderer } from "../types/common";
 import { Size, Rectangle } from "../types/geometry";
 import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
@@ -21,17 +22,7 @@ export class Canvas2DSimpleRenderer implements Renderer {
   private viewport: Viewport = { position: { x: 0, y: 0 }, zoom: 1 };
   needsRender: boolean = false;
 
-  // constructor(hostElement: HTMLElement, zIndex: number) {
-  //   const canvas = createCanvasElement(hostElement, zIndex);
-  //   const context = canvas.getContext("2d");
-
-  //   if (context === null) throw Error("context is null");
-
-  //   this.canvasContext = context;
-  //   this.canvasContext.globalCompositeOperation = "destination-over"; //todo check performance
-  // }
-
-  constructor(canvas: HTMLCanvasElement | OffscreenCanvas) {
+  constructor(private canvas: HTMLCanvasElement | OffscreenCanvas) {
     const context = canvas.getContext("2d");
 
     if (context === null) throw Error("context is null");
@@ -41,9 +32,9 @@ export class Canvas2DSimpleRenderer implements Renderer {
   }
 
   setVisibility(visible: boolean) {
-    // this.canvasContext.canvas.style.visibility = visible
-    //   ? "visible"
-    //   : "collapse";
+    if (hasPropertyInChain(this.canvas, "style"))
+      this.canvas.style.visibility = visible ? "visible" : "collapse";
+    else throw new Error("Cannot change visibility, no style");
   }
 
   //todo canvas left
