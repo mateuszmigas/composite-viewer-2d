@@ -8,6 +8,7 @@ import {
   ViewportManipulator,
   createCanvasElement,
   WebWorkerRendererProxy,
+  RAFSyncContext,
 } from "./viewer2d";
 
 interface Viewer2DHostProps {}
@@ -58,6 +59,9 @@ export class Viewer2DHost extends React.PureComponent<
   componentDidMount() {
     if (this.hostElement.current === null) return;
 
+    //disable context menu
+    this.hostElement.current.oncontextmenu = () => false;
+
     const initialViewport = {
       position: { x: 0, y: 0 },
       zoom: 1,
@@ -76,24 +80,31 @@ export class Viewer2DHost extends React.PureComponent<
       },
       [
         {
-          name: "Canvas 2D",
-          renderer: new Canvas2DSimpleRenderer(
-            createCanvasElement(this.hostElement.current, 100)
+          name: "Canvas 2D offscreen",
+          renderer: new WebWorkerRendererProxy(
+            Canvas2DSimpleRenderer,
+            this.createCanvas(101),
+            () => createCanvasWorker("someworker2")
           ),
+          //renderer: new Canvas2DSimpleRenderer(this.createCanvas(101)),
           payloadSelector: (payload: MyRenderPayload) => ({
-            rectangles: payload.someRectangles1,
+            rectangles: payload.someRectangles2,
           }),
           enabled: true,
         },
         {
-          name: "Canvas 2D offscreen",
-          renderer: new WebWorkerRendererProxy(
-            Canvas2DSimpleRenderer,
-            createCanvasElement(this.hostElement.current, 101),
-            () => createCanvasWorker("someworker2")
+          name: "Canvas 2D",
+          // renderer: new WebWorkerRendererProxy(
+          //   Canvas2DSimpleRenderer,
+          //   this.createCanvas(102),
+          //   () => createCanvasWorker("someworker1")
+          // ),
+          renderer: new Canvas2DSimpleRenderer(
+            this.createCanvas(100),
+            new RAFSyncContext()
           ),
           payloadSelector: (payload: MyRenderPayload) => ({
-            rectangles: payload.someRectangles2,
+            rectangles: payload.someRectangles1,
           }),
           enabled: true,
         },
@@ -126,28 +137,10 @@ export class Viewer2DHost extends React.PureComponent<
     });
   }
 
-  // componentDidUpdate(prevProps: SceneProps) {
-  //   if (prevProps.viewport != this.props.viewport) {
-  //     this.renderDispatcher.setViewport(this.props.viewport);
-  //   }
-  //   if (
-  //     prevProps.products != this.props.products ||
-  //     prevProps.selectedProductsIds != this.props.selectedProductsIds
-  //   ) {
-  //     console.time("compare");
-  //     const path = getPatch(prevProps.products, this.props.products);
-  //     console.timeEnd("compare");
-  //     console.log("path", path);
-
-  //     const arr1 = [...prevProps.products.values()];
-  //     const arr2 = [...this.props.products.values()];
-  //     console.time("comparearr");
-  //     compareArrs(arr1, arr2);
-  //     console.timeEnd("comparearr");
-  //     //render patch
-  //     this.renderScene();
-  //   }
-  // }
+  private createCanvas(zIndex: number) {
+    if (this.hostElement.current === null) throw new Error("fs");
+    return createCanvasElement(this.hostElement.current, zIndex);
+  }
 
   componentWillUnmount() {
     this.renderDispatcher.dispose();

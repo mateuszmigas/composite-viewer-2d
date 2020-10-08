@@ -14,6 +14,9 @@ const defaultOptions: Options = {
   renderMode: "onDemand",
 };
 
+type RendrerMapX<T> = RendrerMap<T> & { needsRender: boolean };
+
+//CompositeRenderer
 export class RenderDispatcher<TRenderPayload> {
   isReady = false; //first resize marks scene as ready
   debugInfo: DebugInfo;
@@ -21,13 +24,18 @@ export class RenderDispatcher<TRenderPayload> {
   resizeObserveUnsubscribe: Unsubscribe;
   renderPayload: TRenderPayload | null = null;
   visibleLayers: string[] = [];
+  renderers: RendrerMapX<TRenderPayload>[] = [];
 
   constructor(
     hostElement: HTMLElement,
     private options: Options = defaultOptions,
-    private renderers: RendrerMap<TRenderPayload>[]
+    renderersX: RendrerMap<TRenderPayload>[]
   ) {
-    this.debugInfo = new DebugInfo(hostElement, renderers, options);
+    this.renderers = renderersX.map(r =>
+      Object.assign(r, { needsRender: true })
+    );
+
+    this.debugInfo = new DebugInfo(hostElement, renderersX, options);
 
     this.resizeObserveUnsubscribe = observeElementBoundingRect(
       hostElement,
@@ -41,14 +49,13 @@ export class RenderDispatcher<TRenderPayload> {
   }
 
   render(renderPayload: TRenderPayload) {
+    this.renderers.forEach(r =>
+      r.renderer.render(0, r.payloadSelector(renderPayload))
+    );
     this.renderPayload = renderPayload;
-    this.renderers.forEach(r => (r.renderer.needsRender = true));
   }
 
-  patchRender() {
-    //todo
-    this.renderers.forEach(r => (r.renderer.needsRender = true));
-  }
+  patchRender() {}
 
   dispose() {
     this.renderers.forEach(s => s.renderer.dispose());
@@ -69,20 +76,28 @@ export class RenderDispatcher<TRenderPayload> {
     this.debugInfo.onLoopBegin();
 
     if (this.isReady && this.renderPayload) {
-      this.renderers.forEach(renderer => {
-        if (
-          renderer.enabled &&
-          (this.options.renderMode === "continuous" ||
-            renderer.renderer.needsRender)
-        )
-          if (this.renderPayload)
-            renderer.renderer.render(
-              time,
-              renderer.payloadSelector(this.renderPayload)
-            );
-
-        renderer.renderer.needsRender = false;
-      });
+      //this.render(this.renderPayload);
+      //render sync
+      //render async synchronized
+      //render async not-synchronized
+      // this.renderers.forEach(renderer => {
+      //   if (
+      //     renderer.enabled &&
+      //     (this.options.renderMode === "continuous" || renderer.needsRender)
+      //   )
+      //     if (this.renderPayload) {
+      //       // console.log(
+      //       //   "requesting render:",
+      //       //   renderer.name,
+      //       //   new Date().getTime()
+      //       // );
+      //       renderer.renderer.render(
+      //         time,
+      //         renderer.payloadSelector(this.renderPayload)
+      //       );
+      //     }
+      //   renderer.needsRender = false;
+      // });
     }
 
     this.debugInfo.onLoopEnd();

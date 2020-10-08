@@ -1,3 +1,4 @@
+import { RAFSyncContext } from "./RenderSyncContext";
 import { Canvas2DSimpleRenderer } from "./Canvas2DSimpleRenderer";
 import { Size, Viewport } from "../types";
 import { isOffscreenCanvasSupported } from "../utils/dom";
@@ -62,8 +63,6 @@ export class WebWorkerRendererProxy implements Renderer {
       this.worker.terminate();
     } else this.internalRenderer?.dispose();
   }
-
-  needsRender: boolean = false;
 }
 
 type RendererEvent =
@@ -84,12 +83,11 @@ type RendererEvent =
       type: "render";
       time: number;
       renderPayload: any;
-    };
+    }
+  | { type: "needsRender" };
 
-export const createProxy = () => {};
-
-const offscreenCapableRenderers: string[] = [typeof Canvas2DSimpleRenderer];
-console.log("off", offscreenCapableRenderers);
+// const offscreenCapableRenderers: string[] = [typeof Canvas2DSimpleRenderer];
+// console.log("off", offscreenCapableRenderers);
 
 export const exposeToProxy = (worker: Worker, customRenderers?: string[]) => {
   let internalRenderer: Renderer;
@@ -98,15 +96,10 @@ export const exposeToProxy = (worker: Worker, customRenderers?: string[]) => {
     const eventData = event.data;
     switch (eventData.type) {
       case "constructor": {
-        console.log("constructing in woerkr", eventData);
-        // const d = new Dupeczka("ef");
-        //   const f = new Function("a", eventData.foo);
-        // console.log("resu", f("dupa"));
-
         internalRenderer = new Canvas2DSimpleRenderer(
-          eventData.offscreenCanvas
+          eventData.offscreenCanvas,
+          new RAFSyncContext()
         );
-        //console.log("constructing in woerkr2");
         break;
       }
       case "setSize": {
@@ -124,6 +117,5 @@ export const exposeToProxy = (worker: Worker, customRenderers?: string[]) => {
       default:
         break;
     }
-    //  calculationWorker.postMessage("FSE111111111111111S'");
   });
 };

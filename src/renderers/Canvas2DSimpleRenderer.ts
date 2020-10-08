@@ -3,7 +3,10 @@ import { Renderer } from "../types/common";
 import { Size, Rectangle } from "../types/geometry";
 import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
 import { Viewport } from "../types/viewport";
-import { createCanvasElement } from "../utils/dom";
+import {
+  InstantRenderSyncContext,
+  IRenderSyncContext,
+} from "./RenderSyncContext";
 
 //sheetSize
 //scene2d, worldSize:x,y, viewSize, viewport { zoom, offset }
@@ -13,6 +16,7 @@ import { createCanvasElement } from "../utils/dom";
 
 //viewport { size, zoom, offset } View2D View3S
 //viewerCanvas 3000x2000\
+
 export class Canvas2DSimpleRenderer implements Renderer {
   private canvasContext:
     | CanvasRenderingContext2D
@@ -20,15 +24,20 @@ export class Canvas2DSimpleRenderer implements Renderer {
 
   private canvasSize: Size = { width: 0, height: 0 };
   private viewport: Viewport = { position: { x: 0, y: 0 }, zoom: 1 };
-  needsRender: boolean = false;
+  animationFrameHandle = 0;
 
-  constructor(private canvas: HTMLCanvasElement | OffscreenCanvas) {
+  constructor(
+    private canvas: HTMLCanvasElement | OffscreenCanvas,
+    private synchronizationContext: IRenderSyncContext = new InstantRenderSyncContext()
+  ) {
     const context = canvas.getContext("2d");
 
     if (context === null) throw Error("context is null");
 
     this.canvasContext = context;
     this.canvasContext.globalCompositeOperation = "destination-over"; //todo check performance
+
+    synchronizationContext.register(() => this.renderInt());
   }
 
   setVisibility(visible: boolean) {
@@ -43,13 +52,15 @@ export class Canvas2DSimpleRenderer implements Renderer {
     canvas.width = size.width;
     canvas.height = size.height;
     this.canvasSize = { width: size.width, height: size.height };
-    this.needsRender = true;
+    this.synchronizationContext.scheduleRender();
   }
 
   setViewport(viewport: Viewport) {
     this.viewport = { ...viewport };
-    this.needsRender = true;
+    this.synchronizationContext.scheduleRender();
   }
+
+  payload: any;
 
   render(
     time: number,
@@ -58,13 +69,20 @@ export class Canvas2DSimpleRenderer implements Renderer {
       circles?: RenderCircleObject[];
     }
   ): void {
+    this.payload = renderPayload;
+    this.renderInt();
+  }
+
+  renderInt(): void {
     this.clearCanvas();
+
+    if (!this.payload) return;
 
     const zoom = this.viewport.zoom;
     const { x: xOffset, y: yOffset } = this.viewport.position;
 
-    if (renderPayload.rectangles) {
-      renderPayload.rectangles.forEach(rectangle => {
+    if (this.payload.rectangles) {
+      this.payload.rectangles.forEach((rectangle: any) => {
         this.canvasContext.fillStyle = `rgb(
             ${rectangle.color.r},
             ${rectangle.color.g},
@@ -78,10 +96,10 @@ export class Canvas2DSimpleRenderer implements Renderer {
       });
     }
 
-    if (renderPayload.circles) {
+    if (this.payload.circles) {
       //todo
       this.canvasContext.beginPath();
-      renderPayload.circles.forEach(circle => {
+      this.payload.circles.forEach((circle: any) => {
         const x = ~~(xOffset + circle.x * zoom);
         const y = ~~(yOffset + circle.y * zoom);
         this.canvasContext.moveTo(x, y);

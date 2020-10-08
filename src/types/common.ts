@@ -9,7 +9,6 @@ export type Renderer = {
   setViewport(viewport: Viewport): void;
   setVisibility(visible: boolean): void;
   dispose(): void;
-  needsRender: boolean;
 };
 
 export type Unsubscribe = () => void;
