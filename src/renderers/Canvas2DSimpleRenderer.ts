@@ -3,10 +3,7 @@ import { Renderer } from "../types/common";
 import { Size, Rectangle } from "../types/geometry";
 import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
 import { Viewport } from "../types/viewport";
-import {
-  InstantRenderSyncContext,
-  IRenderSyncContext,
-} from "./RenderSyncContext";
+import { ImmediateRenderScheduler, IRenderScheduler } from "./RenderScheduler";
 
 //sheetSize
 //scene2d, worldSize:x,y, viewSize, viewport { zoom, offset }
@@ -27,8 +24,14 @@ export class Canvas2DSimpleRenderer implements Renderer {
   animationFrameHandle = 0;
 
   constructor(
+    private renderScheduler: IRenderScheduler,
     private canvas: HTMLCanvasElement | OffscreenCanvas,
-    private synchronizationContext: IRenderSyncContext = new InstantRenderSyncContext()
+    name: string,
+    dupa: {
+      age: number;
+      foo?: () => void;
+    }
+    // = new ImmediateRenderScheduler()
   ) {
     const context = canvas.getContext("2d");
 
@@ -37,7 +40,7 @@ export class Canvas2DSimpleRenderer implements Renderer {
     this.canvasContext = context;
     this.canvasContext.globalCompositeOperation = "destination-over"; //todo check performance
 
-    synchronizationContext.register(() => this.renderInt());
+    renderScheduler.register(this.renderInt);
   }
 
   setVisibility(visible: boolean) {
@@ -52,12 +55,12 @@ export class Canvas2DSimpleRenderer implements Renderer {
     canvas.width = size.width;
     canvas.height = size.height;
     this.canvasSize = { width: size.width, height: size.height };
-    this.synchronizationContext.scheduleRender();
+    this.renderScheduler.scheduleRender();
   }
 
   setViewport(viewport: Viewport) {
     this.viewport = { ...viewport };
-    this.synchronizationContext.scheduleRender();
+    this.renderScheduler.scheduleRender();
   }
 
   payload: any;
@@ -70,11 +73,13 @@ export class Canvas2DSimpleRenderer implements Renderer {
     }
   ): void {
     this.payload = renderPayload;
-    this.renderInt();
+    this.renderScheduler.scheduleRender();
   }
 
-  renderInt(): void {
+  renderInt = () => {
     this.clearCanvas();
+
+    console.log("rendering", this.payload);
 
     if (!this.payload) return;
 
@@ -108,7 +113,7 @@ export class Canvas2DSimpleRenderer implements Renderer {
       this.canvasContext.fillStyle = "black";
       this.canvasContext.fill();
     }
-  }
+  };
 
   dispose(): void {}
 

@@ -1,4 +1,5 @@
 import React from "react";
+import { RAFRenderScheduler } from "../../../lib";
 import {
   Canvas2DSimpleRenderer,
   Color,
@@ -8,7 +9,6 @@ import {
   ViewportManipulator,
   createCanvasElement,
   WebWorkerRendererProxy,
-  RAFSyncContext,
 } from "./viewer2d";
 
 interface Viewer2DHostProps {}
@@ -34,7 +34,7 @@ foo(() => 2);
 foo(2);
 
 const createCanvasWorker = (name: string) =>
-  new Worker("./someworker.ts", {
+  new Worker("./renderWorker.template.ts", {
     type: "module",
     name: name,
   });
@@ -42,12 +42,12 @@ const createCanvasWorker = (name: string) =>
 // const w = createCanvasWorker();
 // w.postMessage("cyci");
 // w.onmessage = e => console.log("message back");
-export class Viewer2DHost extends React.PureComponent<
+export class Viewer2DHost<P extends any[]> extends React.PureComponent<
   Viewer2DHostProps,
   Viewer2DHostState
 > {
   hostElement: React.RefObject<HTMLDivElement>;
-  renderDispatcher!: RenderDispatcher<MyRenderPayload>;
+  renderDispatcher!: RenderDispatcher<MyRenderPayload, P>;
   viewportManipulator!: ViewportManipulator;
 
   constructor(props: Viewer2DHostProps) {
@@ -79,34 +79,63 @@ export class Viewer2DHost extends React.PureComponent<
         renderMode: "onDemand",
       },
       [
+        // {
+        //   name: "Canvas 2D offscreen",
+        //   renderer: new WebWorkerRendererProxy(
+        //     Canvas2DSimpleRenderer,
+        //     this.createCanvas(101),
+        //     () => createCanvasWorker("someworker2"),
+        //     "fes",
+        //     {
+        //       age: 33,
+        //     }
+        //   ),
+        //   //renderer: new Canvas2DSimpleRenderer(this.createCanvas(101)),
+        //   payloadSelector: (payload: MyRenderPayload) => ({
+        //     rectangles: payload.someRectangles2,
+        //   }),
+        //   async: false,
+        //   enabled: true,
+        //},
         {
-          name: "Canvas 2D offscreen",
-          renderer: new WebWorkerRendererProxy(
-            Canvas2DSimpleRenderer,
-            this.createCanvas(101),
-            () => createCanvasWorker("someworker2")
-          ),
-          //renderer: new Canvas2DSimpleRenderer(this.createCanvas(101)),
-          payloadSelector: (payload: MyRenderPayload) => ({
-            rectangles: payload.someRectangles2,
-          }),
-          enabled: true,
-        },
-        {
+          async: "b",
           name: "Canvas 2D",
           // renderer: new WebWorkerRendererProxy(
           //   Canvas2DSimpleRenderer,
           //   this.createCanvas(102),
           //   () => createCanvasWorker("someworker1")
           // ),
-          renderer: new Canvas2DSimpleRenderer(
+          type: Canvas2DSimpleRenderer,
+          params: [
             this.createCanvas(100),
-            new RAFSyncContext()
-          ),
+            "12",
+            {
+              age: 12,
+            },
+          ],
           payloadSelector: (payload: MyRenderPayload) => ({
             rectangles: payload.someRectangles1,
           }),
-          enabled: true,
+        },
+        {
+          async: "a",
+          name: "Canvas 2D1",
+          // renderer: new WebWorkerRendererProxy(
+          //   Canvas2DSimpleRenderer,
+          //   this.createCanvas(102),
+          //   () => createCanvasWorker("someworker1")
+          // ),
+          type: Canvas2DSimpleRenderer,
+          params: [
+            this.createCanvas(100),
+            "12",
+            {
+              age: 12,
+            },
+          ],
+          payloadSelector: (payload: MyRenderPayload) => ({
+            rectangles: payload.someRectangles1,
+          }),
         },
       ]
     );

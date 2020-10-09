@@ -12,3 +12,11 @@ export type Renderer = {
 };
 
 export type Unsubscribe = () => void;
+
+export type Serializable<T> = T extends string | number | boolean | null
+  ? T
+  : T extends Function
+  ? never
+  : T extends object
+  ? { [K in keyof T]: Serializable<T[K]> }
+  : never;

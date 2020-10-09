@@ -1,19 +1,26 @@
-import { RAFSyncContext } from "./RenderSyncContext";
+import { IRenderScheduler, RAFRenderScheduler } from "./RenderScheduler";
 import { Canvas2DSimpleRenderer } from "./Canvas2DSimpleRenderer";
 import { Size, Viewport } from "../types";
 import { isOffscreenCanvasSupported } from "../utils/dom";
-import { Renderer } from "./../types/common";
+import { Renderer, Serializable } from "./../types/common";
 
-export class WebWorkerRendererProxy implements Renderer {
+export type WebWorkerCompatibleCanvasConstructor<T extends any[]> = {
+  new (
+    renderScheduler: IRenderScheduler,
+    canvas: HTMLCanvasElement | OffscreenCanvas,
+    ...otherParams: Serializable<T>
+  ): Renderer;
+};
+
+export class WebWorkerRendererProxy<T extends any[]> implements Renderer {
   internalRenderer: Renderer | null = null;
   worker: Worker | null = null;
 
   constructor(
-    rendererType: {
-      new (canvas: HTMLCanvasElement | OffscreenCanvas): Renderer;
-    },
+    rendererConstructor: WebWorkerCompatibleCanvasConstructor<T>,
     private canvas: HTMLCanvasElement,
-    workerFactory: () => Worker
+    workerFactory: () => Worker,
+    ...otherParams: Serializable<T>
   ) {
     const isOffSu = isOffscreenCanvasSupported();
 
@@ -25,16 +32,18 @@ export class WebWorkerRendererProxy implements Renderer {
           {
             type: "constructor",
             offscreenCanvas,
-            foo2: `
-            return a;
-            `,
           },
           [offscreenCanvas]
         );
       } catch (e) {
         console.log(e);
       }
-    } else this.internalRenderer = new rendererType(canvas);
+    } else
+      this.internalRenderer = new rendererConstructor(
+        new RAFRenderScheduler(),
+        canvas,
+        ...otherParams
+      );
   }
 
   render(time: number, renderPayload: any): void {
@@ -69,7 +78,6 @@ type RendererEvent =
   | {
       type: "constructor";
       offscreenCanvas: OffscreenCanvas;
-      foo: string;
       rendererType: {
         new (canvas: HTMLCanvasElement | OffscreenCanvas): Renderer;
       };
@@ -83,8 +91,7 @@ type RendererEvent =
       type: "render";
       time: number;
       renderPayload: any;
-    }
-  | { type: "needsRender" };
+    };
 
 // const offscreenCapableRenderers: string[] = [typeof Canvas2DSimpleRenderer];
 // console.log("off", offscreenCapableRenderers);
@@ -97,8 +104,13 @@ export const exposeToProxy = (worker: Worker, customRenderers?: string[]) => {
     switch (eventData.type) {
       case "constructor": {
         internalRenderer = new Canvas2DSimpleRenderer(
+          new RAFRenderScheduler(),
           eventData.offscreenCanvas,
-          new RAFSyncContext()
+          "fse",
+          {
+            age: 123,
+            //foo: () => console.log("fes"),
+          }
         );
         break;
       }

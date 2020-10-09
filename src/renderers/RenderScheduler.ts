@@ -1,9 +1,9 @@
-export interface IRenderSyncContext {
+export interface IRenderScheduler {
   register(renderCallback: () => void): void;
   scheduleRender(): void;
 }
 
-export class RAFSyncContext implements IRenderSyncContext {
+export class RAFRenderScheduler implements IRenderScheduler {
   renderCallback: (() => void) | undefined;
 
   register(renderCallback: () => void) {
@@ -17,7 +17,7 @@ export class RAFSyncContext implements IRenderSyncContext {
   }
 }
 
-export class InstantRenderSyncContext implements IRenderSyncContext {
+export class ImmediateRenderScheduler implements IRenderScheduler {
   renderCallback: (() => void) | undefined;
 
   register(renderCallback: () => void) {
