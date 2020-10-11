@@ -1,4 +1,5 @@
 import React from "react";
+import { generateRandomRectangles, repeat } from "./helpers";
 import {
   Canvas2DSimpleRenderer,
   Color,
@@ -15,23 +16,8 @@ interface Viewer2DHostProps {}
 interface Viewer2DHostState {}
 
 type MyRenderPayload = {
-  someRectangles1: RenderRectangleObject[];
-  someRectangles2: RenderRectangleObject[];
+  someRectangles: RenderRectangleObject[];
 };
-
-export const randomInteger = (min: number, max: number) =>
-  Math.floor(Math.random() * (max - min + 1) + min);
-const randomColor = (): Color => {
-  return {
-    r: randomInteger(0, 255),
-    g: randomInteger(0, 255),
-    b: randomInteger(0, 255),
-  };
-};
-
-const foo = (item: number | (() => number)) => {};
-foo(() => 2);
-foo(2);
 
 const createCanvasWorker = (name: string) =>
   new Worker("./someworker.ts", {
@@ -42,6 +28,10 @@ const createCanvasWorker = (name: string) =>
 // const w = createCanvasWorker();
 // w.postMessage("cyci");
 // w.onmessage = e => console.log("message back");
+const totalItems = 10000;
+const renderersCount = 10;
+const webWorker = false;
+
 export class Viewer2DHost extends React.PureComponent<
   Viewer2DHostProps,
   Viewer2DHostState
@@ -73,67 +63,36 @@ export class Viewer2DHost extends React.PureComponent<
       (newViewport: Viewport) => this.renderDispatcher.setViewport(newViewport)
     );
 
+    const defs = repeat(renderersCount).map((_, index) => {
+      const pageSize = totalItems / renderersCount;
+      return {
+        name: `Canvas 2D ${index} ${webWorker ? "WebWorker" : "MainThread"}`,
+        renderer: webWorker
+          ? new WebWorkerRendererProxy(
+              Canvas2DSimpleRenderer,
+              this.createCanvas(101 + index),
+              () => createCanvasWorker(`renderWorker${index + 1}`)
+            )
+          : new Canvas2DSimpleRenderer(this.createCanvas(101 + index)),
+        payloadSelector: (payload: MyRenderPayload) => ({
+          rectangles: payload.someRectangles.slice(
+            index * pageSize,
+            (index + 1) * pageSize
+          ),
+        }),
+        enabled: true,
+      };
+    });
     this.renderDispatcher = new RenderDispatcher(
       this.hostElement.current,
       {
         renderMode: "onDemand",
       },
-      [
-        {
-          name: "Canvas 2D offscreen",
-          renderer: new WebWorkerRendererProxy(
-            Canvas2DSimpleRenderer,
-            this.createCanvas(101),
-            () => createCanvasWorker("someworker2")
-          ),
-          //renderer: new Canvas2DSimpleRenderer(this.createCanvas(101)),
-          payloadSelector: (payload: MyRenderPayload) => ({
-            rectangles: payload.someRectangles2,
-          }),
-          enabled: true,
-        },
-        {
-          name: "Canvas 2D",
-          // renderer: new WebWorkerRendererProxy(
-          //   Canvas2DSimpleRenderer,
-          //   this.createCanvas(102),
-          //   () => createCanvasWorker("someworker1")
-          // ),
-          renderer: new Canvas2DSimpleRenderer(
-            this.createCanvas(100),
-            new RAFSyncContext()
-          ),
-          payloadSelector: (payload: MyRenderPayload) => ({
-            rectangles: payload.someRectangles1,
-          }),
-          enabled: true,
-        },
-      ]
+      defs
     );
     this.renderDispatcher.setViewport(initialViewport);
     this.renderDispatcher.render({
-      someRectangles1: [
-        {
-          type: "Rectangle",
-          containerId: "1",
-          x: 100,
-          y: 10,
-          width: 50,
-          height: 80,
-          color: randomColor(),
-        },
-      ],
-      someRectangles2: [
-        {
-          type: "Rectangle",
-          containerId: "1",
-          x: 110,
-          y: 20,
-          width: 50,
-          height: 80,
-          color: randomColor(),
-        },
-      ],
+      someRectangles: generateRandomRectangles(totalItems),
     });
   }
 
