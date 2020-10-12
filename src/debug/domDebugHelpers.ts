@@ -7,7 +7,7 @@ export class DebugInfo {
 
   constructor(
     hostElement: HTMLElement,
-    renderers: RendrerMap<any>[],
+    renderers: RendrerMap<any, any>[],
     options: { renderMode: RenderMode }
   ) {
     this.stats.showPanel(0);
@@ -25,7 +25,7 @@ export class DebugInfo {
 }
 
 const createPanel = (
-  renderers: RendrerMap<any>[],
+  renderers: RendrerMap<any, any>[],
   options: { renderMode: RenderMode }
 ): HTMLElement => {
   const div = document.createElement("div");
@@ -44,7 +44,7 @@ const createPanel = (
     input.checked = !!r.enabled;
     input.onchange = () => {
       r.enabled = input.checked;
-      r.renderer.setVisibility(r.enabled);
+      //r.renderer.setVisibility(r.enabled);
     };
     const label = document.createElement("label");
     label.htmlFor = r.name;

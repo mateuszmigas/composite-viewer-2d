@@ -1,10 +1,10 @@
+<<<<<<< HEAD
 import { Renderer } from "./Renderer";
-import { IRenderScheduler, RAFRenderScheduler } from "./RenderScheduler";
+import { RAFSyncContext } from "./RenderSyncContext";
 import { Canvas2DSimpleRenderer } from "./Canvas2DSimpleRenderer";
 import { Size, Viewport } from "../types";
 import { isOffscreenCanvasSupported } from "../utils/dom";
 
-import { Renderer, Serializable } from "./../types/common";
 type RenderProxyEvent =
   | {
       type: "constructor";
@@ -37,6 +37,13 @@ export const createProxy = <T extends any[]>(
   } else {
   }
 };
+=======
+import { IRenderScheduler, RAFRenderScheduler } from "./RenderScheduler";
+import { Canvas2DSimpleRenderer } from "./Canvas2DSimpleRenderer";
+import { Size, Viewport } from "../types";
+import { isOffscreenCanvasSupported } from "../utils/dom";
+import { Renderer, Serializable } from "./../types/common";
+>>>>>>> RenderDispatcher-with-renderer-creation
 
 export type WebWorkerCompatibleCanvasConstructor<T extends any[]> = {
   new (
@@ -106,7 +113,28 @@ export class WebWorkerRendererProxy<T extends any[]> implements Renderer {
   }
 }
 
+<<<<<<< HEAD
+=======
+type RendererEvent =
+  | {
+      type: "constructor";
+      offscreenCanvas: OffscreenCanvas;
+      rendererType: {
+        new (canvas: HTMLCanvasElement | OffscreenCanvas): Renderer;
+      };
+    }
+  | {
+      type: "setSize";
+      size: Size;
+    }
+  | { type: "setViewport"; viewport: Viewport }
+  | {
+      type: "render";
+      time: number;
+      renderPayload: any;
     };
+
+>>>>>>> RenderDispatcher-with-renderer-creation
 // const offscreenCapableRenderers: string[] = [typeof Canvas2DSimpleRenderer];
 // console.log("off", offscreenCapableRenderers);
 

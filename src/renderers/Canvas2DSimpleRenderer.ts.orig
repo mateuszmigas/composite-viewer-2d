@@ -2,8 +2,15 @@ import { hasPropertyInChain } from "../common/typeGuards";
 import { Size, Rectangle } from "../types/geometry";
 import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
 import { Viewport } from "../types/viewport";
+<<<<<<< HEAD
 import { Renderer } from "./Renderer";
+import {
+  InstantRenderSyncContext,
+  IRenderSyncContext,
+} from "./RenderSyncContext";
+=======
 import { ImmediateRenderScheduler, IRenderScheduler } from "./RenderScheduler";
+>>>>>>> RenderDispatcher-with-renderer-creation
 
 //sheetSize
 //scene2d, worldSize:x,y, viewSize, viewport { zoom, offset }

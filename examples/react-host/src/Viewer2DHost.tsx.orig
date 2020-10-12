@@ -1,6 +1,9 @@
 import React from "react";
+<<<<<<< HEAD
 import { MyCustomRenderer } from "./MyCustomRenderer";
+=======
 import { RAFRenderScheduler } from "../../../lib";
+>>>>>>> RenderDispatcher-with-renderer-creation
 import {
   Canvas2DSimpleRenderer,
   Color,
@@ -117,19 +120,23 @@ export class Viewer2DHost<P extends any[]> extends React.PureComponent<
           payloadSelector: (payload: MyRenderPayload) => ({
             rectangles: payload.someRectangles1,
           }),
-          enabled: true,
         },
         {
+<<<<<<< HEAD
           name: "My custom renderer",
           renderer: new MyCustomRenderer(
             this.createCanvas(102),
             new RAFSyncContext()
           ),
           payloadSelector: (payload: MyRenderPayload) => ({}),
+          enabled: true,
         },
         {
+          name: "Canvas 2D",
+=======
           async: "a",
           name: "Canvas 2D1",
+>>>>>>> RenderDispatcher-with-renderer-creation
           // renderer: new WebWorkerRendererProxy(
           //   Canvas2DSimpleRenderer,
           //   this.createCanvas(102),
