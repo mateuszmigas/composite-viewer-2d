@@ -1,4 +1,5 @@
 import React from "react";
+import { MyCustomRenderer } from "./MyCustomRenderer";
 import {
   Canvas2DSimpleRenderer,
   Color,
@@ -90,6 +91,15 @@ export class Viewer2DHost extends React.PureComponent<
           payloadSelector: (payload: MyRenderPayload) => ({
             rectangles: payload.someRectangles2,
           }),
+          enabled: true,
+        },
+        {
+          name: "My custom renderer",
+          renderer: new MyCustomRenderer(
+            this.createCanvas(102),
+            new RAFSyncContext()
+          ),
+          payloadSelector: (payload: MyRenderPayload) => ({}),
           enabled: true,
         },
         {

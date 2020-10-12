@@ -1,8 +1,41 @@
+import { Renderer } from "./Renderer";
 import { RAFSyncContext } from "./RenderSyncContext";
 import { Canvas2DSimpleRenderer } from "./Canvas2DSimpleRenderer";
 import { Size, Viewport } from "../types";
 import { isOffscreenCanvasSupported } from "../utils/dom";
-import { Renderer } from "./../types/common";
+
+type RenderProxyEvent =
+  | {
+      type: "constructor";
+      offscreenCanvas: OffscreenCanvas;
+      rendererType: {
+        new (canvas: HTMLCanvasElement | OffscreenCanvas): Renderer;
+      };
+    }
+  | {
+      type: "setSize";
+      size: Size;
+    }
+  | { type: "setViewport"; viewport: Viewport }
+  | {
+      type: "render";
+      time: number;
+      renderPayload: any;
+    }
+  | { type: "needsRender" };
+
+export const createProxy = <T extends any[]>(
+  rendererType: {
+    new (canvas: HTMLCanvasElement | OffscreenCanvas): Renderer;
+  },
+  rendererParams: [HTMLCanvasElement, ...T],
+  workerFactory: () => Worker
+) => {
+  if (isOffscreenCanvasSupported()) {
+    return new WebWorkerRendererProxy(rendererType, render);
+  } else {
+  }
+};
 
 export class WebWorkerRendererProxy implements Renderer {
   internalRenderer: Renderer | null = null;
@@ -15,9 +48,7 @@ export class WebWorkerRendererProxy implements Renderer {
     private canvas: HTMLCanvasElement,
     workerFactory: () => Worker
   ) {
-    const isOffSu = isOffscreenCanvasSupported();
-
-    if (isOffSu) {
+    if (isOffscreenCanvasSupported()) {
       this.worker = workerFactory();
       const offscreenCanvas = canvas.transferControlToOffscreen();
       try {
@@ -25,9 +56,6 @@ export class WebWorkerRendererProxy implements Renderer {
           {
             type: "constructor",
             offscreenCanvas,
-            foo2: `
-            return a;
-            `,
           },
           [offscreenCanvas]
         );
@@ -65,34 +93,13 @@ export class WebWorkerRendererProxy implements Renderer {
   }
 }
 
-type RendererEvent =
-  | {
-      type: "constructor";
-      offscreenCanvas: OffscreenCanvas;
-      foo: string;
-      rendererType: {
-        new (canvas: HTMLCanvasElement | OffscreenCanvas): Renderer;
-      };
-    }
-  | {
-      type: "setSize";
-      size: Size;
-    }
-  | { type: "setViewport"; viewport: Viewport }
-  | {
-      type: "render";
-      time: number;
-      renderPayload: any;
-    }
-  | { type: "needsRender" };
-
 // const offscreenCapableRenderers: string[] = [typeof Canvas2DSimpleRenderer];
 // console.log("off", offscreenCapableRenderers);
 
 export const exposeToProxy = (worker: Worker, customRenderers?: string[]) => {
   let internalRenderer: Renderer;
 
-  worker.addEventListener("message", (event: { data: RendererEvent }) => {
+  worker.addEventListener("message", (event: { data: RenderProxyEvent }) => {
     const eventData = event.data;
     switch (eventData.type) {
       case "constructor": {

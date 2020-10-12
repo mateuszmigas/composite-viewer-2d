@@ -1,4 +1,4 @@
-import { Renderer } from "./common";
+import { Renderer } from "../renderers";
 import { RenderPayload } from "./renderItem";
 
 export type RendrerMap<T> = {

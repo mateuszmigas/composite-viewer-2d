@@ -1,8 +1,8 @@
 import { hasPropertyInChain } from "../common/typeGuards";
-import { Renderer } from "../types/common";
 import { Size, Rectangle } from "../types/geometry";
 import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
 import { Viewport } from "../types/viewport";
+import { Renderer } from "./Renderer";
 import {
   InstantRenderSyncContext,
   IRenderSyncContext,
