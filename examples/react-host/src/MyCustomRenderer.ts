@@ -1,12 +1,11 @@
 import {
   Renderer,
-  IRenderSyncContext,
-  InstantRenderSyncContext,
   Size,
   Rectangle,
   Viewport,
   RenderRectangleObject,
   RenderCircleObject,
+  IRenderScheduler,
 } from "./viewer2d";
 
 export class MyCustomRenderer implements Renderer {
@@ -19,8 +18,8 @@ export class MyCustomRenderer implements Renderer {
   animationFrameHandle = 0;
 
   constructor(
-    private canvas: HTMLCanvasElement | OffscreenCanvas,
-    private synchronizationContext: IRenderSyncContext = new InstantRenderSyncContext()
+    private renderScheduler: IRenderScheduler,
+    private canvas: HTMLCanvasElement | OffscreenCanvas
   ) {
     const context = canvas.getContext("2d");
 
@@ -28,7 +27,7 @@ export class MyCustomRenderer implements Renderer {
 
     this.canvasContext = context;
     this.canvasContext.globalCompositeOperation = "destination-over";
-    synchronizationContext.register(() => this.renderInt());
+    renderScheduler.register(this.renderInt);
   }
 
   setVisibility(visible: boolean) {
@@ -40,12 +39,12 @@ export class MyCustomRenderer implements Renderer {
     canvas.width = size.width;
     canvas.height = size.height;
     this.canvasSize = { width: size.width, height: size.height };
-    this.synchronizationContext.scheduleRender();
+    this.renderScheduler.scheduleRender();
   }
 
   setViewport(viewport: Viewport) {
     this.viewport = { ...viewport };
-    this.synchronizationContext.scheduleRender();
+    this.renderScheduler.scheduleRender();
   }
 
   payload: any;
@@ -61,7 +60,7 @@ export class MyCustomRenderer implements Renderer {
     this.renderInt();
   }
 
-  renderInt(): void {
+  renderInt = () => {
     this.clearCanvas();
 
     if (!this.payload) return;
@@ -71,7 +70,7 @@ export class MyCustomRenderer implements Renderer {
         ${1},
         ${1})`;
     this.canvasContext.fillRect(100, 100, 200, 300);
-  }
+  };
 
   dispose(): void {}
 

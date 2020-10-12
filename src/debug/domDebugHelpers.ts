@@ -7,7 +7,7 @@ export class DebugInfo {
 
   constructor(
     hostElement: HTMLElement,
-    renderers: RendrerMap<any, any>[],
+    renderers: RendrerMap<any>[],
     options: { renderMode: RenderMode }
   ) {
     this.stats.showPanel(0);
@@ -25,7 +25,7 @@ export class DebugInfo {
 }
 
 const createPanel = (
-  renderers: RendrerMap<any, any>[],
+  renderers: RendrerMap<any>[],
   options: { renderMode: RenderMode }
 ): HTMLElement => {
   const div = document.createElement("div");

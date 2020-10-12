@@ -27,12 +27,10 @@ export class Canvas2DSimpleRenderer implements Renderer {
     private renderScheduler: IRenderScheduler,
     private canvas: HTMLCanvasElement | OffscreenCanvas,
     name: string,
-    dupa: {
-      age: number;
-      foo?: () => void;
-    }
-    // = new ImmediateRenderScheduler()
+    age: number
   ) {
+    console.log("init with ", name, age);
+
     const context = canvas.getContext("2d");
 
     if (context === null) throw Error("context is null");
@@ -78,8 +76,6 @@ export class Canvas2DSimpleRenderer implements Renderer {
 
   renderInt = () => {
     this.clearCanvas();
-
-    console.log("rendering", this.payload);
 
     if (!this.payload) return;
 

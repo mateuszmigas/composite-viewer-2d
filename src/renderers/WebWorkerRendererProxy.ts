@@ -1,16 +1,22 @@
+import { assertNever } from "./../utils/typeHelpers";
 import { Renderer } from "./Renderer";
 import { IRenderScheduler, RAFRenderScheduler } from "./RenderScheduler";
 import { Canvas2DSimpleRenderer } from "./Canvas2DSimpleRenderer";
 import { Size, Viewport } from "../types";
 import { isOffscreenCanvasSupported } from "../utils/dom";
+import { Serializable } from "./../types/common";
 
-import { Renderer, Serializable } from "./../types/common";
+const defaultRendererConstructors: WebWorkerCompatibleCanvasConstructor<
+  any
+>[] = [Canvas2DSimpleRenderer];
+
 type RenderProxyEvent =
   | {
       type: "constructor";
-      offscreenCanvas: OffscreenCanvas;
-      rendererType: {
-        new (canvas: HTMLCanvasElement | OffscreenCanvas): Renderer;
+      data: {
+        offscreenCanvas: OffscreenCanvas;
+        rendererType: string;
+        rendererParams: any[];
       };
     }
   | {
@@ -22,23 +28,9 @@ type RenderProxyEvent =
       type: "render";
       time: number;
       renderPayload: any;
-    }
-  | { type: "needsRender" };
+    };
 
-export const createProxy = <T extends any[]>(
-  rendererType: {
-    new (canvas: HTMLCanvasElement | OffscreenCanvas): Renderer;
-  },
-  rendererParams: [HTMLCanvasElement, ...T],
-  workerFactory: () => Worker
-) => {
-  if (isOffscreenCanvasSupported()) {
-    return new WebWorkerRendererProxy(rendererType, render);
-  } else {
-  }
-};
-
-export type WebWorkerCompatibleCanvasConstructor<T extends any[]> = {
+type WebWorkerCompatibleCanvasConstructor<T extends any[]> = {
   new (
     renderScheduler: IRenderScheduler,
     canvas: HTMLCanvasElement | OffscreenCanvas,
@@ -47,101 +39,125 @@ export type WebWorkerCompatibleCanvasConstructor<T extends any[]> = {
 };
 
 export class WebWorkerRendererProxy<T extends any[]> implements Renderer {
-  internalRenderer: Renderer | null = null;
-  worker: Worker | null = null;
+  worker: Worker;
 
   constructor(
-    rendererConstructor: WebWorkerCompatibleCanvasConstructor<T>,
-    private canvas: HTMLCanvasElement,
     workerFactory: () => Worker,
-    ...otherParams: Serializable<T>
+    rendererConstructor: WebWorkerCompatibleCanvasConstructor<T>,
+    rendererParams: [HTMLCanvasElement, ...Serializable<T>]
   ) {
-    if (isOffscreenCanvasSupported()) {
-      this.worker = workerFactory();
-      const offscreenCanvas = canvas.transferControlToOffscreen();
-      try {
-        this.worker.postMessage(
-          {
-            type: "constructor",
-            offscreenCanvas,
-          },
-          [offscreenCanvas]
-        );
-      } catch (e) {
-        console.log(e);
-      }
-    } else
-      this.internalRenderer = new rendererConstructor(
-        new RAFRenderScheduler(),
-        canvas,
-        ...otherParams
-      );
+    this.worker = workerFactory();
+    const [canvas, ...otherParams] = rendererParams;
+    const offscreenCanvas = canvas.transferControlToOffscreen();
+
+    console.log(" hehe", rendererConstructor.name);
+
+    this.worker.postMessage(
+      {
+        type: "constructor",
+        data: {
+          offscreenCanvas,
+          rendererType: rendererConstructor.name,
+          rendererParams: otherParams,
+        },
+      },
+      [offscreenCanvas]
+    );
   }
 
   render(time: number, renderPayload: any): void {
-    if (this.worker)
-      this.worker.postMessage({ type: "render", time, renderPayload });
-    else this.internalRenderer?.render(time, renderPayload);
+    this.worker.postMessage({ type: "render", time, renderPayload });
   }
 
   setSize(size: Size): void {
-    if (this.worker) this.worker.postMessage({ type: "setSize", size });
-    else this.internalRenderer?.setSize(size);
+    this.worker.postMessage({ type: "setSize", size });
   }
 
   setViewport(viewport: Viewport): void {
-    if (this.worker) this.worker.postMessage({ type: "setViewport", viewport });
-    else this.internalRenderer?.setViewport(viewport);
+    this.worker.postMessage({ type: "setViewport", viewport });
   }
 
   setVisibility(visible: boolean): void {
-    this.canvas.style.visibility = visible ? "visible" : "collapse";
+    //this.canvas.style.visibility = visible ? "visible" : "collapse";
   }
 
   dispose(): void {
-    if (this.worker) {
-      this.worker.postMessage({ type: "dispose" });
-      this.worker.terminate();
-    } else this.internalRenderer?.dispose();
+    this.worker.postMessage({ type: "dispose" });
+    this.worker.terminate();
   }
 }
 
-    };
-// const offscreenCapableRenderers: string[] = [typeof Canvas2DSimpleRenderer];
-// console.log("off", offscreenCapableRenderers);
+export const tryCreateProxy = <T extends any[]>(
+  workerFactory: () => Worker,
+  rendererConstructor: WebWorkerCompatibleCanvasConstructor<T>,
+  rendererParams: [HTMLCanvasElement, ...Serializable<T>]
+) => {
+  if (isOffscreenCanvasSupported()) {
+    return new WebWorkerRendererProxy(
+      workerFactory,
+      rendererConstructor,
+      rendererParams
+    );
+  } else {
+    return new rendererConstructor(new RAFRenderScheduler(), ...rendererParams);
+  }
+};
 
-export const exposeToProxy = (worker: Worker, customRenderers?: string[]) => {
+export const exposeToProxy = (
+  worker: Worker,
+  customRendererConstructors: WebWorkerCompatibleCanvasConstructor<any>[]
+) => {
   let internalRenderer: Renderer;
+  const rendererConstructors = [
+    ...defaultRendererConstructors,
+    ...customRendererConstructors,
+  ];
 
-  worker.addEventListener("message", (event: { data: RenderProxyEvent }) => {
-    const eventData = event.data;
-    switch (eventData.type) {
-      case "constructor": {
-        internalRenderer = new Canvas2DSimpleRenderer(
-          new RAFRenderScheduler(),
-          eventData.offscreenCanvas,
-          "fse",
-          {
-            age: 123,
-            //foo: () => console.log("fes"),
-          }
-        );
-        break;
+  const getRendererConstructor = (
+    rendererName: string
+  ): WebWorkerCompatibleCanvasConstructor<any> => {
+    for (const constructor of rendererConstructors) {
+      if (rendererName === constructor.name) {
+        return constructor;
       }
-      case "setSize": {
-        internalRenderer.setSize(eventData.size);
-        break;
-      }
-      case "setViewport": {
-        internalRenderer.setViewport(eventData.viewport);
-        break;
-      }
-      case "render": {
-        internalRenderer.render(eventData.time, eventData.renderPayload);
-        break;
-      }
-      default:
-        break;
     }
-  });
+
+    throw new Error(
+      "Unsupported renderer. Make sure to expose constructor in exposeToProxy params"
+    );
+  };
+
+  worker.addEventListener(
+    "message",
+    ({ data: proxyEvent }: { data: RenderProxyEvent }) => {
+      switch (proxyEvent.type) {
+        case "constructor": {
+          const rendererConstructor = getRendererConstructor(
+            proxyEvent.data.rendererType
+          );
+
+          internalRenderer = new rendererConstructor(
+            new RAFRenderScheduler(),
+            proxyEvent.data.offscreenCanvas,
+            ...proxyEvent.data.rendererParams
+          );
+          break;
+        }
+        case "setSize": {
+          internalRenderer.setSize(proxyEvent.size);
+          break;
+        }
+        case "setViewport": {
+          internalRenderer.setViewport(proxyEvent.viewport);
+          break;
+        }
+        case "render": {
+          internalRenderer.render(proxyEvent.time, proxyEvent.renderPayload);
+          break;
+        }
+        default:
+          assertNever(proxyEvent);
+      }
+    }
+  );
 };

@@ -15,7 +15,7 @@ const defaultOptions: Options = {
 };
 
 //CompositeRenderer
-export class RenderDispatcher<TRenderPayload, P extends any[]> {
+export class RenderDispatcher<TRenderPayload> {
   isReady = false; //first resize marks scene as ready
   debugInfo: DebugInfo;
   animationFrameHandle = 0;
@@ -25,7 +25,7 @@ export class RenderDispatcher<TRenderPayload, P extends any[]> {
   constructor(
     hostElement: HTMLElement,
     private options: Options = defaultOptions,
-    private renderers: RendrerMap<TRenderPayload, P>[]
+    private renderers: RendrerMap<TRenderPayload>[]
   ) {
     this.debugInfo = new DebugInfo(hostElement, renderers, options);
 
@@ -36,26 +36,25 @@ export class RenderDispatcher<TRenderPayload, P extends any[]> {
   }
 
   setViewport(viewport: Viewport) {
-    //this.renderers.forEach(r => r.renderer.setViewport(viewport));
+    this.renderers.forEach(r => r.renderer.setViewport(viewport));
   }
 
   render(renderPayload: TRenderPayload) {
-    // console.log("settign payload");
-    // this.renderers.forEach(r =>
-    //   r.renderer.render(0, r.payloadSelector(renderPayload))
-    // );
+    this.renderers.forEach(r =>
+      r.renderer.render(0, r.payloadSelector(renderPayload))
+    );
   }
 
   patchRender() {}
 
   dispose() {
-    //this.renderers.forEach(s => s.renderer.dispose());
+    this.renderers.forEach(s => s.renderer.dispose());
     this.resizeObserveUnsubscribe();
     cancelAnimationFrame(this.animationFrameHandle);
   }
 
   private resize(size: Size) {
-    //this.renderers.forEach(r => r.renderer.setSize(size));
+    this.renderers.forEach(r => r.renderer.setSize(size));
     console.log("first resize");
 
     this.isReady = true;
