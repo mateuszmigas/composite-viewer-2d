@@ -6,9 +6,15 @@ import { Size, Viewport } from "../types";
 import { isOffscreenCanvasSupported } from "../utils/dom";
 import { Serializable } from "./../types/common";
 
-const defaultRendererConstructors: WebWorkerCompatibleCanvasConstructor<
-  any
->[] = [Canvas2DSimpleRenderer];
+type WebWorkerRenderer<TParams extends any[]> = {
+  new (
+    renderScheduler: IRenderScheduler,
+    canvas: HTMLCanvasElement | OffscreenCanvas,
+    ...otherParams: Serializable<TParams>
+  ): Renderer;
+};
+
+type WebWorkerCompatibleRenderer = WebWorkerRenderer<any>;
 
 type RenderProxyEvent =
   | {
@@ -16,43 +22,46 @@ type RenderProxyEvent =
       data: {
         offscreenCanvas: OffscreenCanvas;
         rendererType: string;
-        rendererParams: any[];
+        rendererParams: unknown[];
       };
     }
   | {
       type: "setSize";
-      size: Size;
+      data: {
+        size: Size;
+      };
     }
-  | { type: "setViewport"; viewport: Viewport }
+  | {
+      type: "setViewport";
+      data: {
+        viewport: Viewport;
+      };
+    }
   | {
       type: "render";
-      time: number;
-      renderPayload: any;
-    };
+      data: {
+        renderPayload: Serializable<any>;
+      };
+    }
+  | { type: "dispose" };
 
-type WebWorkerCompatibleCanvasConstructor<T extends any[]> = {
-  new (
-    renderScheduler: IRenderScheduler,
-    canvas: HTMLCanvasElement | OffscreenCanvas,
-    ...otherParams: Serializable<T>
-  ): Renderer;
-};
+const defaultRendererConstructors: WebWorkerCompatibleRenderer[] = [
+  Canvas2DSimpleRenderer,
+];
 
-export class WebWorkerRendererProxy<T extends any[]> implements Renderer {
+export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
   worker: Worker;
 
   constructor(
     workerFactory: () => Worker,
-    rendererConstructor: WebWorkerCompatibleCanvasConstructor<T>,
-    rendererParams: [HTMLCanvasElement, ...Serializable<T>]
+    rendererConstructor: WebWorkerRenderer<TParams>,
+    rendererParams: [HTMLCanvasElement, ...Serializable<TParams>]
   ) {
     this.worker = workerFactory();
     const [canvas, ...otherParams] = rendererParams;
     const offscreenCanvas = canvas.transferControlToOffscreen();
 
-    console.log(" hehe", rendererConstructor.name);
-
-    this.worker.postMessage(
+    this.postWorkerMessage(
       {
         type: "constructor",
         data: {
@@ -65,16 +74,21 @@ export class WebWorkerRendererProxy<T extends any[]> implements Renderer {
     );
   }
 
-  render(time: number, renderPayload: any): void {
-    this.worker.postMessage({ type: "render", time, renderPayload });
+  render(renderPayload: unknown): void {
+    this.postWorkerMessage({
+      type: "render",
+      data: {
+        renderPayload,
+      },
+    });
   }
 
   setSize(size: Size): void {
-    this.worker.postMessage({ type: "setSize", size });
+    this.postWorkerMessage({ type: "setSize", data: { size } });
   }
 
   setViewport(viewport: Viewport): void {
-    this.worker.postMessage({ type: "setViewport", viewport });
+    this.postWorkerMessage({ type: "setViewport", data: { viewport } });
   }
 
   setVisibility(visible: boolean): void {
@@ -82,15 +96,23 @@ export class WebWorkerRendererProxy<T extends any[]> implements Renderer {
   }
 
   dispose(): void {
-    this.worker.postMessage({ type: "dispose" });
+    this.postWorkerMessage({ type: "dispose" });
     this.worker.terminate();
+  }
+
+  private postWorkerMessage(
+    event: RenderProxyEvent,
+    transfer?: Transferable[]
+  ) {
+    if (transfer) this.worker.postMessage(event, transfer);
+    else this.worker.postMessage(event);
   }
 }
 
-export const tryCreateProxy = <T extends any[]>(
+export const tryCreateProxy = <TParams extends any[]>(
   workerFactory: () => Worker,
-  rendererConstructor: WebWorkerCompatibleCanvasConstructor<T>,
-  rendererParams: [HTMLCanvasElement, ...Serializable<T>]
+  rendererConstructor: WebWorkerRenderer<TParams>,
+  rendererParams: [HTMLCanvasElement, ...Serializable<TParams>]
 ) => {
   if (isOffscreenCanvasSupported()) {
     return new WebWorkerRendererProxy(
@@ -105,7 +127,7 @@ export const tryCreateProxy = <T extends any[]>(
 
 export const exposeToProxy = (
   worker: Worker,
-  customRendererConstructors: WebWorkerCompatibleCanvasConstructor<any>[]
+  customRendererConstructors: WebWorkerCompatibleRenderer[]
 ) => {
   let internalRenderer: Renderer;
   const rendererConstructors = [
@@ -115,7 +137,7 @@ export const exposeToProxy = (
 
   const getRendererConstructor = (
     rendererName: string
-  ): WebWorkerCompatibleCanvasConstructor<any> => {
+  ): WebWorkerCompatibleRenderer => {
     for (const constructor of rendererConstructors) {
       if (rendererName === constructor.name) {
         return constructor;
@@ -144,15 +166,19 @@ export const exposeToProxy = (
           break;
         }
         case "setSize": {
-          internalRenderer.setSize(proxyEvent.size);
+          internalRenderer.setSize(proxyEvent.data.size);
           break;
         }
         case "setViewport": {
-          internalRenderer.setViewport(proxyEvent.viewport);
+          internalRenderer.setViewport(proxyEvent.data.viewport);
           break;
         }
         case "render": {
-          internalRenderer.render(proxyEvent.time, proxyEvent.renderPayload);
+          internalRenderer.render(proxyEvent.data.renderPayload);
+          break;
+        }
+        case "dispose": {
+          internalRenderer.dispose();
           break;
         }
         default:

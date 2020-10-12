@@ -41,7 +41,9 @@ export class RenderDispatcher<TRenderPayload> {
 
   render(renderPayload: TRenderPayload) {
     this.renderers.forEach(r =>
-      r.renderer.render(0, r.payloadSelector(renderPayload))
+      r.renderer.render(
+        r.payloadSelector(renderPayload) as Partial<TRenderPayload>
+      )
     );
   }
 

@@ -1,15 +1,15 @@
 import React from "react";
 import { MyCustomRenderer } from "./MyCustomRenderer";
-import { RAFRenderScheduler, tryCreateProxy } from "../../../lib";
+import { tryCreateProxy } from "../../../lib";
 import {
   Canvas2DSimpleRenderer,
   Color,
   RenderDispatcher,
   RenderRectangleObject,
   Viewport,
+  Renderer,
   ViewportManipulator,
   createCanvasElement,
-  WebWorkerRendererProxy,
 } from "./viewer2d";
 
 interface Viewer2DHostProps {}
@@ -43,6 +43,30 @@ const createCanvasWorker = (name: string) =>
 // const w = createCanvasWorker();
 // w.postMessage("cyci");
 // w.onmessage = e => console.log("message back");
+
+// const createDefinition = <TRendererPayload, TRenderer>(
+//   name: string,
+//   renderer: Renderer,
+//   payloadSelector: (payload: TRendererPayload) => string
+// ) => {
+//   return {
+//     name: "some canvas 1 ",
+//     // renderer: new MyCustomRenderer(
+//     //   new RAFRenderScheduler(),
+//     //   this.createCanvas(101)
+//     // ),
+//     renderer: tryCreateProxy(
+//       () => createCanvasWorker("someworker3"),
+//       MyCustomRenderer,
+//       [this.createCanvas(101)]
+//     ),
+//     payloadSelector: (payload: MyRenderPayload) => ({
+//       rectangles: payload.someRectangles2,
+//     }),
+//     enabled: true,
+//   };
+// };
+
 export class Viewer2DHost extends React.PureComponent<
   Viewer2DHostProps,
   Viewer2DHostState
@@ -107,31 +131,13 @@ export class Viewer2DHost extends React.PureComponent<
           renderer: tryCreateProxy(
             () => createCanvasWorker("someworker2"),
             Canvas2DSimpleRenderer,
-            [this.createCanvas(102), "fsefs", 12]
+            [this.createCanvas(102)]
           ),
           payloadSelector: (payload: MyRenderPayload) => ({
             rectangles: payload.someRectangles1,
           }),
           enabled: true,
         },
-        // {
-        //   name: "Canvas 2D offscreen",
-        //   renderer: new WebWorkerRendererProxy(
-        //     Canvas2DSimpleRenderer,
-        //     this.createCanvas(101),
-        //     () => createCanvasWorker("someworker2"),
-        //     "fes",
-        //     {
-        //       age: 33,
-        //     }
-        //   ),
-        //   //renderer: new Canvas2DSimpleRenderer(this.createCanvas(101)),
-        //   payloadSelector: (payload: MyRenderPayload) => ({
-        //     rectangles: payload.someRectangles2,
-        //   }),
-        //   async: false,
-        //   enabled: true,
-        //},
       ]
     );
     this.renderDispatcher.setViewport(initialViewport);

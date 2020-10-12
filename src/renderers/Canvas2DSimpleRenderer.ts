@@ -3,7 +3,7 @@ import { Size, Rectangle } from "../types/geometry";
 import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
 import { Viewport } from "../types/viewport";
 import { Renderer } from "./Renderer";
-import { ImmediateRenderScheduler, IRenderScheduler } from "./RenderScheduler";
+import { IRenderScheduler } from "./RenderScheduler";
 
 //sheetSize
 //scene2d, worldSize:x,y, viewSize, viewport { zoom, offset }
@@ -25,12 +25,8 @@ export class Canvas2DSimpleRenderer implements Renderer {
 
   constructor(
     private renderScheduler: IRenderScheduler,
-    private canvas: HTMLCanvasElement | OffscreenCanvas,
-    name: string,
-    age: number
+    private canvas: HTMLCanvasElement | OffscreenCanvas
   ) {
-    console.log("init with ", name, age);
-
     const context = canvas.getContext("2d");
 
     if (context === null) throw Error("context is null");
@@ -63,13 +59,10 @@ export class Canvas2DSimpleRenderer implements Renderer {
 
   payload: any;
 
-  render(
-    time: number,
-    renderPayload: {
-      rectangles?: RenderRectangleObject[];
-      circles?: RenderCircleObject[];
-    }
-  ): void {
+  render(renderPayload: {
+    rectangles?: RenderRectangleObject[];
+    circles?: RenderCircleObject[];
+  }): void {
     this.payload = renderPayload;
     this.renderScheduler.scheduleRender();
   }

@@ -49,13 +49,10 @@ export class MyCustomRenderer implements Renderer {
 
   payload: any;
 
-  render(
-    time: number,
-    renderPayload: {
-      rectangles?: RenderRectangleObject[];
-      circles?: RenderCircleObject[];
-    }
-  ): void {
+  render(renderPayload: {
+    rectangles?: RenderRectangleObject[];
+    circles?: RenderCircleObject[];
+  }): void {
     this.payload = renderPayload;
     this.renderInt();
   }

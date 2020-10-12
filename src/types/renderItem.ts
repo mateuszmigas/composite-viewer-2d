@@ -29,9 +29,3 @@ export type RenderCircleObject = RenderBaseObject & {
   radius: number;
   color: Color;
 };
-
-export class RenderPayload {
-  rectangles?: RenderRectangleObject[];
-  circles?: RenderCircleObject[];
-  //lines?: RenderLineObject[];
-}
