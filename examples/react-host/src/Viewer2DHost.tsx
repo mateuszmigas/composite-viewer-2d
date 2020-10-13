@@ -28,9 +28,8 @@ const createCanvasWorker = (name: string) =>
 // const w = createCanvasWorker();
 // w.postMessage("cyci");
 // w.onmessage = e => console.log("message back");
-const totalItems = 10000;
-const renderersCount = 10;
-const webWorker = false;
+const totalItems = 20000;
+const renderersIsWebWorker = [true, true];
 
 export class Viewer2DHost extends React.PureComponent<
   Viewer2DHostProps,
@@ -63,11 +62,13 @@ export class Viewer2DHost extends React.PureComponent<
       (newViewport: Viewport) => this.renderDispatcher.setViewport(newViewport)
     );
 
-    const defs = repeat(renderersCount).map((_, index) => {
-      const pageSize = totalItems / renderersCount;
+    const defs = repeat(renderersIsWebWorker.length).map((_, index) => {
+      const pageSize = totalItems / renderersIsWebWorker.length;
       return {
-        name: `Canvas 2D ${index} ${webWorker ? "WebWorker" : "MainThread"}`,
-        renderer: webWorker
+        name: `Canvas 2D ${index} ${
+          renderersIsWebWorker[index] ? "WebWorker" : "MainThread"
+        }`,
+        renderer: renderersIsWebWorker[index]
           ? new WebWorkerRendererProxy(
               Canvas2DSimpleRenderer,
               this.createCanvas(101 + index),
