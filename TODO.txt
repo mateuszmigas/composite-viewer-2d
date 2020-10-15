@@ -1,0 +1,7 @@
+- better strongly typed api for creating renderers
+- pickObject api for renderers
+- picking in webworker
+- treejs plugin
+- pixijs plugin
+- check if ww terminate is not called before dispose
+- move render mode and profiling to render scheduler

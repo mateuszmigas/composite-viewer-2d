@@ -4,6 +4,7 @@ import { Rectangle, Size } from "../types/geometry";
 import { RendrerMap } from "../types/renderMap";
 import { Viewport } from "../types/viewport";
 import { observeElementBoundingRect } from "../utils/dom";
+import { Renderer } from "./Renderer";
 
 export type Options = {
   renderMode: RenderMode;
@@ -16,16 +17,16 @@ const defaultOptions: Options = {
 
 //CompositeRenderer
 export class RenderDispatcher<TRenderPayload> {
-  isReady = false; //first resize marks scene as ready
+  isReady = false;
   debugInfo: DebugInfo;
   animationFrameHandle = 0;
   resizeObserveUnsubscribe: Unsubscribe;
-  visibleLayers: string[] = [];
 
   constructor(
     hostElement: HTMLElement,
     private options: Options = defaultOptions,
-    private renderers: RendrerMap<TRenderPayload>[]
+    private renderers: RendrerMap<TRenderPayload>[],
+    private onReadyToRender: () => void
   ) {
     this.debugInfo = new DebugInfo(hostElement, renderers, options);
 
@@ -33,6 +34,8 @@ export class RenderDispatcher<TRenderPayload> {
       hostElement,
       rectangle => this.resize(rectangle)
     );
+
+    this.requestRender();
   }
 
   setViewport(viewport: Viewport) {
@@ -47,29 +50,41 @@ export class RenderDispatcher<TRenderPayload> {
     );
   }
 
-  patchRender() {}
+  patchRender() {
+    // this.renderers.forEach(r =>
+    //   r.renderer.render(
+    //     r.payloadSelector(renderPayload) as Partial<TRenderPayload>
+    //   )
+    // );
+  }
 
   dispose() {
-    this.renderers.forEach(s => s.renderer.dispose());
     this.resizeObserveUnsubscribe();
-    cancelAnimationFrame(this.animationFrameHandle);
+    this.renderers.forEach(s => s.renderer.dispose());
   }
 
   private resize(size: Size) {
-    this.renderers.forEach(r => r.renderer.setSize(size));
-    console.log("first resize");
+    this.forEachRenderer(r => r.setSize(size));
 
-    this.isReady = true;
+    //first resize
+    if (!this.isReady) {
+      this.isReady = true;
+      this.onReadyToRender();
+    }
   }
 
-  // private requestRender() {
-  //   this.animationFrameHandle = requestAnimationFrame(this.renderLoop);
-  // }
+  private forEachRenderer(callback: (renderer: Renderer) => void) {
+    this.renderers.forEach(r => callback(r.renderer));
+  }
 
-  // private renderLoop = (time: number) => {
-  //   this.debugInfo.onLoopBegin();
+  private requestRender() {
+    this.animationFrameHandle = requestAnimationFrame(this.renderLoop);
+  }
 
-  //   this.debugInfo.onLoopEnd();
-  //   this.requestRender();
-  // };
+  private renderLoop = (time: number) => {
+    this.debugInfo.onLoopBegin();
+
+    this.debugInfo.onLoopEnd();
+    this.requestRender();
+  };
 }

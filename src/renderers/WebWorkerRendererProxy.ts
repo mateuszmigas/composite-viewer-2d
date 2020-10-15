@@ -51,15 +51,17 @@ const defaultRendererConstructors: WebWorkerCompatibleRenderer[] = [
 
 export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
   worker: Worker;
+  canvas: HTMLCanvasElement;
 
   constructor(
     workerFactory: () => Worker,
     rendererConstructor: WebWorkerRenderer<TParams>,
     rendererParams: [HTMLCanvasElement, ...Serializable<TParams>]
   ) {
-    this.worker = workerFactory();
     const [canvas, ...otherParams] = rendererParams;
+    this.canvas = canvas;
     const offscreenCanvas = canvas.transferControlToOffscreen();
+    this.worker = workerFactory();
 
     this.postWorkerMessage(
       {
@@ -92,7 +94,9 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
   }
 
   setVisibility(visible: boolean): void {
-    //this.canvas.style.visibility = visible ? "visible" : "collapse";
+    console.log("setting visibility");
+
+    this.canvas.style.visibility = visible ? "visible" : "collapse";
   }
 
   dispose(): void {

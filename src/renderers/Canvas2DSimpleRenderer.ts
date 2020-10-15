@@ -45,7 +45,7 @@ export class Canvas2DSimpleRenderer implements Renderer {
 
   //todo canvas left
   setSize(size: Rectangle): void {
-    const canvas = this.getCanvas();
+    const canvas = this.canvasContext.canvas;
     canvas.width = size.width;
     canvas.height = size.height;
     this.canvasSize = { width: size.width, height: size.height };
@@ -113,9 +113,5 @@ export class Canvas2DSimpleRenderer implements Renderer {
       this.canvasSize.width,
       this.canvasSize.height
     );
-  }
-
-  private getCanvas() {
-    return this.canvasContext.canvas;
   }
 }

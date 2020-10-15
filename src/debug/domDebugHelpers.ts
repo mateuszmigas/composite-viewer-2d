@@ -44,7 +44,7 @@ const createPanel = (
     input.checked = !!r.enabled;
     input.onchange = () => {
       r.enabled = input.checked;
-      //r.renderer.setVisibility(r.enabled);
+      r.renderer.setVisibility(r.enabled);
     };
     const label = document.createElement("label");
     label.htmlFor = r.name;

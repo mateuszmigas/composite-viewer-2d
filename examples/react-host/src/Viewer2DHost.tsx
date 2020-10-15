@@ -1,15 +1,15 @@
 import React from "react";
+import { RAFRenderScheduler } from "../../../lib";
 import { MyCustomRenderer } from "./MyCustomRenderer";
-import { tryCreateProxy } from "../../../lib";
 import {
   Canvas2DSimpleRenderer,
   Color,
   RenderDispatcher,
   RenderRectangleObject,
   Viewport,
-  Renderer,
   ViewportManipulator,
   createCanvasElement,
+  tryCreateProxy,
 } from "./viewer2d";
 
 interface Viewer2DHostProps {}
@@ -29,10 +29,6 @@ const randomColor = (): Color => {
     b: randomInteger(0, 255),
   };
 };
-
-const foo = (item: number | (() => number)) => {};
-foo(() => 2);
-foo(2);
 
 const createCanvasWorker = (name: string) =>
   new Worker("./renderWorker.template.ts", {
@@ -105,6 +101,21 @@ export class Viewer2DHost extends React.PureComponent<
       },
       [
         {
+          name: "some canvas main thread ",
+          // renderer: new MyCustomRenderer(
+          //   new RAFRenderScheduler(),
+          //   this.createCanvas(101)
+          // ),
+          renderer: new Canvas2DSimpleRenderer(
+            new RAFRenderScheduler(),
+            this.createCanvas(101)
+          ),
+          payloadSelector: (payload: MyRenderPayload) => ({
+            rectangles: payload.someRectangles2,
+          }),
+          enabled: true,
+        },
+        {
           name: "some canvas 1 ",
           // renderer: new MyCustomRenderer(
           //   new RAFRenderScheduler(),
@@ -118,7 +129,7 @@ export class Viewer2DHost extends React.PureComponent<
           payloadSelector: (payload: MyRenderPayload) => ({
             rectangles: payload.someRectangles2,
           }),
-          enabled: true,
+          enabled: false,
         },
         {
           name: "some canvas 2",
@@ -138,33 +149,35 @@ export class Viewer2DHost extends React.PureComponent<
           }),
           enabled: true,
         },
-      ]
+      ],
+      () => {
+        this.renderDispatcher.render({
+          someRectangles1: [
+            {
+              type: "Rectangle",
+              containerId: "1",
+              x: 100,
+              y: 10,
+              width: 50,
+              height: 80,
+              color: randomColor(),
+            },
+          ],
+          someRectangles2: [
+            {
+              type: "Rectangle",
+              containerId: "1",
+              x: 110,
+              y: 20,
+              width: 50,
+              height: 80,
+              color: randomColor(),
+            },
+          ],
+        });
+      }
     );
     this.renderDispatcher.setViewport(initialViewport);
-    this.renderDispatcher.render({
-      someRectangles1: [
-        {
-          type: "Rectangle",
-          containerId: "1",
-          x: 100,
-          y: 10,
-          width: 50,
-          height: 80,
-          color: randomColor(),
-        },
-      ],
-      someRectangles2: [
-        {
-          type: "Rectangle",
-          containerId: "1",
-          x: 110,
-          y: 20,
-          width: 50,
-          height: 80,
-          color: randomColor(),
-        },
-      ],
-    });
   }
 
   private createCanvas(zIndex: number) {
