@@ -1,4 +1,5 @@
 import { hasPropertyInChain } from "../common/typeGuards";
+import { PickingOptions, PickingResult } from "../picking";
 import { Size, Rectangle } from "../types/geometry";
 import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
 import { Viewport } from "../types/viewport";
@@ -110,6 +111,10 @@ export class Canvas2DSimpleRenderer implements Renderer {
       this.canvasContext.fill();
     }
   };
+
+  pickObjects(options: PickingOptions): Promise<PickingResult[]> {
+    return Promise.resolve(["a", "b"] as any);
+  }
 
   dispose(): void {}
 

@@ -1,4 +1,5 @@
 import { DebugInfo } from "../debug/domDebugHelpers";
+import { PickingOptions, PickingResult } from "../picking";
 import { RenderMode, Unsubscribe } from "../types/common";
 import { Rectangle, Size } from "../types/geometry";
 import { RendrerMap } from "../types/renderMap";
@@ -58,6 +59,12 @@ export class RenderDispatcher<TRenderPayload> {
     //     r.payloadSelector(renderPayload) as Partial<TRenderPayload>
     //   )
     // );
+  }
+
+  pickObjects(options: PickingOptions): Promise<PickingResult[]> {
+    return Promise.all(
+      this.renderers.map(r => r.renderer.pickObjects(options))
+    ).then(result => result.flat());
   }
 
   dispose() {

@@ -7,6 +7,8 @@ import {
   RenderCircleObject,
   IRenderScheduler,
   hasPropertyInChain,
+  PickingOptions,
+  PickingResult,
 } from "./viewer2d";
 
 export class MyCustomRenderer implements Renderer {
@@ -81,6 +83,10 @@ export class MyCustomRenderer implements Renderer {
         ${1})`;
     this.canvasContext.fillRect(100, 100, 200, 300);
   };
+
+  pickObjects(options: PickingOptions): Promise<PickingResult[]> {
+    return Promise.resolve(["c", "d"] as any);
+  }
 
   dispose(): void {}
 

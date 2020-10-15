@@ -135,9 +135,7 @@ export class Viewer2DHost extends React.PureComponent<
           name: "some canvas 2",
           // renderer: new Canvas2DSimpleRenderer(
           //   new RAFRenderScheduler(),
-          //   this.createCanvas(102),
-          //   "fesefs",
-          //   12
+          //   this.createCanvas(102)
           // ),
           renderer: tryCreateProxy(
             () => createCanvasWorker("someworker2"),
@@ -191,7 +189,20 @@ export class Viewer2DHost extends React.PureComponent<
 
   render() {
     return (
-      <div className="viewer-content" tabIndex={0} ref={this.hostElement}></div>
+      <div
+        className="viewer-content"
+        onClick={() => {
+          console.log("clicked");
+          this.renderDispatcher
+            .pickObjects({
+              mode: "position",
+              position: { x: 100, y: 100 },
+            })
+            .then(result => console.log(result));
+        }}
+        tabIndex={0}
+        ref={this.hostElement}
+      ></div>
     );
   }
 }

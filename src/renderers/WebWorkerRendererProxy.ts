@@ -5,6 +5,8 @@ import { Canvas2DSimpleRenderer } from "./Canvas2DSimpleRenderer";
 import { Size, Viewport } from "../types";
 import { isOffscreenCanvasSupported } from "../utils/dom";
 import { Serializable } from "./../types/common";
+import { PickingOptions, PickingResult } from "../picking";
+import { v4 as uuidv4 } from "uuid";
 
 type WebWorkerRenderer<TParams extends any[]> = {
   new (
@@ -49,7 +51,28 @@ type RenderProxyEvent =
         renderPayload: Serializable<any>;
       };
     }
+  | {
+      type: "pickObjects";
+      identifier: string;
+      data: {
+        options: PickingOptions;
+      };
+    }
   | { type: "dispose" };
+
+type RenderProxyReturnEvent = {
+  type: "pickObjects";
+  identifier: string;
+  data:
+    | {
+        promiseResolution: "fulfilled";
+        result: PickingResult[];
+      }
+    | {
+        promiseResolution: "rejected";
+        error: any;
+      };
+};
 
 const defaultRendererConstructors: WebWorkerCompatibleRenderer[] = [
   Canvas2DSimpleRenderer,
@@ -107,6 +130,26 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
     });
   }
 
+  pickObjects(options: PickingOptions): Promise<PickingResult[]> {
+    const identifier = uuidv4();
+
+    this.postWorkerMessage({
+      type: "pickObjects",
+      data: { options },
+      identifier,
+    });
+
+    return new Promise((resolve, reject) => {
+      this.listenToWorkerMessage("pickObjects", identifier, pickingResult => {
+        if (pickingResult.promiseResolution === "fulfilled") {
+          resolve(pickingResult.result);
+        } else {
+          reject(pickingResult.error);
+        }
+      });
+    });
+  }
+
   dispose(): void {
     this.postWorkerMessage({ type: "dispose" });
     this.worker.terminate();
@@ -118,6 +161,22 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
   ) {
     if (transfer) this.worker.postMessage(event, transfer);
     else this.worker.postMessage(event);
+  }
+
+  private listenToWorkerMessage(
+    type: RenderProxyReturnEvent["type"],
+    identifier: string,
+    callback: (data: RenderProxyReturnEvent["data"]) => void
+  ) {
+    this.worker.onmessage = ({
+      data: proxyEvent,
+    }: {
+      data: RenderProxyReturnEvent;
+    }) => {
+      if (proxyEvent.type === type && proxyEvent.identifier === identifier) {
+        callback(proxyEvent.data);
+      }
+    };
   }
 }
 
@@ -141,7 +200,7 @@ export const exposeToProxy = (
   worker: Worker,
   customRendererConstructors: WebWorkerCompatibleRenderer[]
 ) => {
-  let internalRenderer: Renderer;
+  let renderer: Renderer;
   const rendererConstructors = [
     ...defaultRendererConstructors,
     ...customRendererConstructors,
@@ -161,6 +220,10 @@ export const exposeToProxy = (
     );
   };
 
+  const postWorkerMessage = (event: RenderProxyReturnEvent) => {
+    worker.postMessage(event);
+  };
+
   worker.addEventListener(
     "message",
     ({ data: proxyEvent }: { data: RenderProxyEvent }) => {
@@ -170,7 +233,7 @@ export const exposeToProxy = (
             proxyEvent.data.rendererType
           );
 
-          internalRenderer = new rendererConstructor(
+          renderer = new rendererConstructor(
             new RAFRenderScheduler(),
             proxyEvent.data.offscreenCanvas,
             ...proxyEvent.data.rendererParams
@@ -178,23 +241,47 @@ export const exposeToProxy = (
           break;
         }
         case "setSize": {
-          internalRenderer.setSize(proxyEvent.data.size);
+          renderer.setSize(proxyEvent.data.size);
           break;
         }
         case "setViewport": {
-          internalRenderer.setViewport(proxyEvent.data.viewport);
+          renderer.setViewport(proxyEvent.data.viewport);
           break;
         }
         case "setVisibility": {
-          internalRenderer.setVisibility(proxyEvent.data.visible);
+          renderer.setVisibility(proxyEvent.data.visible);
           break;
         }
         case "render": {
-          internalRenderer.render(proxyEvent.data.renderPayload);
+          renderer.render(proxyEvent.data.renderPayload);
           break;
         }
+        case "pickObjects": {
+          renderer
+            .pickObjects(proxyEvent.data.options)
+            .then(result =>
+              postWorkerMessage({
+                type: "pickObjects",
+                identifier: proxyEvent.identifier,
+                data: {
+                  promiseResolution: "fulfilled",
+                  result,
+                },
+              })
+            )
+            .catch(error =>
+              postWorkerMessage({
+                type: "pickObjects",
+                identifier: proxyEvent.identifier,
+                data: {
+                  promiseResolution: "rejected",
+                  error,
+                },
+              })
+            );
+        }
         case "dispose": {
-          internalRenderer.dispose();
+          renderer.dispose();
           break;
         }
         default:
