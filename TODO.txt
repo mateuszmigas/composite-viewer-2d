@@ -1,6 +1,4 @@
 todo:
-- pickObject api for renderers
-- picking in webworker
 - better strongly typed api for creating renderers
 - treejs plugin
 - pixijs plugin
