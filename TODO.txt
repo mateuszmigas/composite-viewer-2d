@@ -1,3 +1,4 @@
+todo:
 - better strongly typed api for creating renderers
 - pickObject api for renderers
 - picking in webworker
@@ -5,3 +6,8 @@
 - pixijs plugin
 - check if ww terminate is not called before dispose
 - move render mode and profiling to render scheduler
+- render params in schedule renderer
+- full render/patch render
+
+done:
+- make sure there is single render at start

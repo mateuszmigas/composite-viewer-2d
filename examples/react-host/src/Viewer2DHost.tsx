@@ -100,21 +100,21 @@ export class Viewer2DHost extends React.PureComponent<
         renderMode: "onDemand",
       },
       [
-        {
-          name: "some canvas main thread ",
-          // renderer: new MyCustomRenderer(
-          //   new RAFRenderScheduler(),
-          //   this.createCanvas(101)
-          // ),
-          renderer: new Canvas2DSimpleRenderer(
-            new RAFRenderScheduler(),
-            this.createCanvas(101)
-          ),
-          payloadSelector: (payload: MyRenderPayload) => ({
-            rectangles: payload.someRectangles2,
-          }),
-          enabled: true,
-        },
+        // {
+        //   name: "some canvas main thread ",
+        //   // renderer: new MyCustomRenderer(
+        //   //   new RAFRenderScheduler(),
+        //   //   this.createCanvas(101)
+        //   // ),
+        //   renderer: new Canvas2DSimpleRenderer(
+        //     new RAFRenderScheduler(),
+        //     this.createCanvas(101)
+        //   ),
+        //   payloadSelector: (payload: MyRenderPayload) => ({
+        //     rectangles: payload.someRectangles2,
+        //   }),
+        //   enabled: true,
+        // },
         {
           name: "some canvas 1 ",
           // renderer: new MyCustomRenderer(
@@ -129,7 +129,7 @@ export class Viewer2DHost extends React.PureComponent<
           payloadSelector: (payload: MyRenderPayload) => ({
             rectangles: payload.someRectangles2,
           }),
-          enabled: false,
+          enabled: true,
         },
         {
           name: "some canvas 2",

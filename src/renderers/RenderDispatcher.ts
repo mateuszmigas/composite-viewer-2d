@@ -35,6 +35,8 @@ export class RenderDispatcher<TRenderPayload> {
       rectangle => this.resize(rectangle)
     );
 
+    this.renderers.forEach(r => r.renderer.setVisibility(!!r.enabled));
+
     this.requestRender();
   }
 

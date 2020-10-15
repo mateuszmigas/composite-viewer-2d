@@ -38,6 +38,12 @@ type RenderProxyEvent =
       };
     }
   | {
+      type: "setVisibility";
+      data: {
+        visible: boolean;
+      };
+    }
+  | {
       type: "render";
       data: {
         renderPayload: Serializable<any>;
@@ -94,9 +100,11 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
   }
 
   setVisibility(visible: boolean): void {
-    console.log("setting visibility");
-
     this.canvas.style.visibility = visible ? "visible" : "collapse";
+    this.postWorkerMessage({
+      type: "setVisibility",
+      data: { visible },
+    });
   }
 
   dispose(): void {
@@ -175,6 +183,10 @@ export const exposeToProxy = (
         }
         case "setViewport": {
           internalRenderer.setViewport(proxyEvent.data.viewport);
+          break;
+        }
+        case "setVisibility": {
+          internalRenderer.setVisibility(proxyEvent.data.visible);
           break;
         }
         case "render": {

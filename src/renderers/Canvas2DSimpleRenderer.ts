@@ -19,9 +19,10 @@ export class Canvas2DSimpleRenderer implements Renderer {
     | CanvasRenderingContext2D
     | OffscreenCanvasRenderingContext2D;
 
-  private canvasSize: Size = { width: 0, height: 0 };
+  private size: Size = { width: 0, height: 0 };
   private viewport: Viewport = { position: { x: 0, y: 0 }, zoom: 1 };
-  animationFrameHandle = 0;
+  private isVisible = true;
+  scheduleRender: () => void;
 
   constructor(
     private renderScheduler: IRenderScheduler,
@@ -34,13 +35,19 @@ export class Canvas2DSimpleRenderer implements Renderer {
     this.canvasContext = context;
     this.canvasContext.globalCompositeOperation = "destination-over"; //todo check performance
 
-    renderScheduler.register(this.renderInt);
+    this.scheduleRender = () => {
+      if (this.payload && this.isVisible)
+        this.renderScheduler.scheduleRender(this.renderInt);
+    };
   }
 
   setVisibility(visible: boolean) {
+    this.isVisible = visible;
+
     if (hasPropertyInChain(this.canvas, "style"))
       this.canvas.style.visibility = visible ? "visible" : "collapse";
-    else throw new Error("Cannot change visibility, no style");
+
+    this.scheduleRender();
   }
 
   //todo canvas left
@@ -48,13 +55,13 @@ export class Canvas2DSimpleRenderer implements Renderer {
     const canvas = this.canvasContext.canvas;
     canvas.width = size.width;
     canvas.height = size.height;
-    this.canvasSize = { width: size.width, height: size.height };
-    this.renderScheduler.scheduleRender();
+    this.size = { width: size.width, height: size.height };
+    this.scheduleRender();
   }
 
   setViewport(viewport: Viewport) {
     this.viewport = { ...viewport };
-    this.renderScheduler.scheduleRender();
+    this.scheduleRender();
   }
 
   payload: any;
@@ -64,7 +71,7 @@ export class Canvas2DSimpleRenderer implements Renderer {
     circles?: RenderCircleObject[];
   }): void {
     this.payload = renderPayload;
-    this.renderScheduler.scheduleRender();
+    this.scheduleRender();
   }
 
   renderInt = () => {
@@ -107,11 +114,6 @@ export class Canvas2DSimpleRenderer implements Renderer {
   dispose(): void {}
 
   private clearCanvas() {
-    this.canvasContext.clearRect(
-      0,
-      0,
-      this.canvasSize.width,
-      this.canvasSize.height
-    );
+    this.canvasContext.clearRect(0, 0, this.size.width, this.size.height);
   }
 }
