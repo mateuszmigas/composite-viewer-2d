@@ -63,7 +63,9 @@ export class RenderDispatcher<TRenderPayload> {
 
   pickObjects(options: PickingOptions): Promise<PickingResult[]> {
     return Promise.all(
-      this.renderers.map(r => r.renderer.pickObjects(options))
+      this.renderers
+        .filter(r => r.enabled)
+        .map(r => r.renderer.pickObjects(options))
     ).then(result => result.flat());
   }
 

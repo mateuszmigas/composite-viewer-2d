@@ -173,6 +173,8 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
     }: {
       data: RenderProxyReturnEvent;
     }) => {
+      console.log("lit");
+
       if (proxyEvent.type === type && proxyEvent.identifier === identifier) {
         callback(proxyEvent.data);
       }
