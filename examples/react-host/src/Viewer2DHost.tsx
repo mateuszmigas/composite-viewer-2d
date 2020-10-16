@@ -94,86 +94,48 @@ export class Viewer2DHost extends React.PureComponent<
       (newViewport: Viewport) => this.renderDispatcher.setViewport(newViewport)
     );
 
+    const renderers = [
+      {
+        name: "some canvas 1 ",
+        // renderer: new MyCustomRenderer(
+        //   new RAFRenderScheduler(),
+        //   this.createCanvas(101)
+        // ),
+        renderer: tryCreateProxy(
+          () => createCanvasWorker("someworker3"),
+          MyCustomRenderer,
+          [this.createCanvas(101)]
+        ),
+        payloadSelector: (payload: MyRenderPayload) => ({
+          rectangles: payload.someRectangles2,
+        }),
+        enabled: true,
+      },
+      {
+        name: "some canvas 2",
+        // renderer: new Canvas2DSimpleRenderer(
+        //   new RAFRenderScheduler(),
+        //   this.createCanvas(102)
+        // ),
+        renderer: tryCreateProxy(
+          () => createCanvasWorker("someworker2"),
+          Canvas2DSimpleRenderer,
+          [this.createCanvas(102)]
+        ),
+        payloadSelector: (payload: MyRenderPayload) => ({
+          rectangles: payload.someRectangles1,
+        }),
+        enabled: true,
+      },
+    ];
+
     this.renderDispatcher = new RenderDispatcher(
       this.hostElement.current,
       {
         renderMode: "onDemand",
       },
-      [
-        // {
-        //   name: "some canvas main thread ",
-        //   // renderer: new MyCustomRenderer(
-        //   //   new RAFRenderScheduler(),
-        //   //   this.createCanvas(101)
-        //   // ),
-        //   renderer: new Canvas2DSimpleRenderer(
-        //     new RAFRenderScheduler(),
-        //     this.createCanvas(101)
-        //   ),
-        //   payloadSelector: (payload: MyRenderPayload) => ({
-        //     rectangles: payload.someRectangles2,
-        //   }),
-        //   enabled: true,
-        // },
-        {
-          name: "some canvas 1 ",
-          // renderer: new MyCustomRenderer(
-          //   new RAFRenderScheduler(),
-          //   this.createCanvas(101)
-          // ),
-          renderer: tryCreateProxy(
-            () => createCanvasWorker("someworker3"),
-            MyCustomRenderer,
-            [this.createCanvas(101)]
-          ),
-          payloadSelector: (payload: MyRenderPayload) => ({
-            rectangles: payload.someRectangles2,
-          }),
-          enabled: true,
-        },
-        {
-          name: "some canvas 2",
-          // renderer: new Canvas2DSimpleRenderer(
-          //   new RAFRenderScheduler(),
-          //   this.createCanvas(102)
-          // ),
-          renderer: tryCreateProxy(
-            () => createCanvasWorker("someworker2"),
-            Canvas2DSimpleRenderer,
-            [this.createCanvas(102)]
-          ),
-          payloadSelector: (payload: MyRenderPayload) => ({
-            rectangles: payload.someRectangles1,
-          }),
-          enabled: true,
-        },
-      ],
-      () => {
-        this.renderDispatcher.render({
-          someRectangles1: [
-            {
-              type: "Rectangle",
-              containerId: "1",
-              x: 100,
-              y: 10,
-              width: 50,
-              height: 80,
-              color: randomColor(),
-            },
-          ],
-          someRectangles2: [
-            {
-              type: "Rectangle",
-              containerId: "1",
-              x: 110,
-              y: 20,
-              width: 50,
-              height: 80,
-              color: randomColor(),
-            },
-          ],
-        });
-      }
+      renderers,
+      this.fullRender
     );
     this.renderDispatcher.setViewport(initialViewport);
   }
@@ -182,6 +144,33 @@ export class Viewer2DHost extends React.PureComponent<
     if (this.hostElement.current === null) throw new Error("fs");
     return createCanvasElement(this.hostElement.current, zIndex);
   }
+
+  private fullRender = () => {
+    this.renderDispatcher.render({
+      someRectangles1: [
+        {
+          type: "Rectangle",
+          containerId: "1",
+          x: 100,
+          y: 10,
+          width: 50,
+          height: 80,
+          color: randomColor(),
+        },
+      ],
+      someRectangles2: [
+        {
+          type: "Rectangle",
+          containerId: "1",
+          x: 110,
+          y: 20,
+          width: 50,
+          height: 80,
+          color: randomColor(),
+        },
+      ],
+    });
+  };
 
   componentWillUnmount() {
     this.renderDispatcher.dispose();
@@ -198,7 +187,8 @@ export class Viewer2DHost extends React.PureComponent<
               mode: "position",
               position: { x: 100, y: 100 },
             })
-            .then(result => console.log(result));
+            .then(result => console.log(result))
+            .catch(error => console.error(error));
         }}
         tabIndex={0}
         ref={this.hostElement}
