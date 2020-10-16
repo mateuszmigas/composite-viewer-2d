@@ -47,3 +47,9 @@ export type ProxyReturnEvent<T> = ValueOf<
       : never;
   }
 >;
+
+export type ProxyReturnEventListener<T> = {
+  methodCallback: (
+    returnValue: ProxyReturnEvent<T>["methodReturnValue"]
+  ) => void;
+} & Omit<ProxyReturnEvent<T>, "methodReturnValue">;

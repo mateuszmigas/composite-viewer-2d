@@ -7,7 +7,11 @@ import { isOffscreenCanvasSupported } from "../utils/dom";
 import { Serializable } from "./../types/common";
 import { PickingOptions, PickingResult } from "../picking";
 import { v4 as uuidv4 } from "uuid";
-import { ProxyEvent, ProxyReturnEvent } from "../types/proxy";
+import {
+  ProxyEvent,
+  ProxyReturnEvent,
+  ProxyReturnEventListener,
+} from "../types/proxy";
 
 type WebWorkerRenderer<TParams extends any[]> = {
   new (
@@ -20,7 +24,7 @@ type WebWorkerRenderer<TParams extends any[]> = {
 type WebWorkerCompatibleRenderer = WebWorkerRenderer<any>;
 
 type RenderProxyReturnEvent = ProxyReturnEvent<Renderer>;
-
+type RenderProxyReturnEventListener = ProxyReturnEventListener<Renderer>;
 type RenderProxyEvent =
   | {
       methodType: "constructor";
@@ -95,17 +99,17 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
     });
 
     return new Promise((resolve, reject) => {
-      this.listenToWorkerMessage(
-        "pickObjects",
+      this.listenToWorkerMessage({
+        methodType: "pickObjects",
         methodIdentifier,
-        pickingResult => {
+        methodCallback: pickingResult => {
           if (pickingResult.promiseResolution === "fulfilled") {
             resolve(pickingResult.result);
           } else {
             reject(pickingResult.error);
           }
-        }
-      );
+        },
+      });
     });
   }
 
@@ -122,11 +126,8 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
     else this.worker.postMessage(event);
   }
 
-  private listenToWorkerMessage(
-    methodType: RenderProxyReturnEvent["methodType"],
-    methodIdentifier: RenderProxyReturnEvent["methodIdentifier"],
-    callback: (returnValue: RenderProxyReturnEvent["methodReturnValue"]) => void
-  ) {
+  private listenToWorkerMessage(listener: RenderProxyReturnEventListener) {
+    const { methodType, methodIdentifier, methodCallback } = listener;
     this.worker.onmessage = ({
       data: proxyEvent,
     }: {
@@ -136,7 +137,7 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
         proxyEvent.methodType === methodType &&
         proxyEvent.methodIdentifier === methodIdentifier
       ) {
-        callback(proxyEvent.methodReturnValue);
+        methodCallback(proxyEvent.methodReturnValue);
       }
     };
   }
@@ -182,9 +183,8 @@ export const exposeToProxy = (
     );
   };
 
-  const postWorkerMessage = (event: RenderProxyReturnEvent) => {
+  const postWorkerMessage = (event: RenderProxyReturnEvent) =>
     worker.postMessage(event);
-  };
 
   worker.addEventListener(
     "message",
