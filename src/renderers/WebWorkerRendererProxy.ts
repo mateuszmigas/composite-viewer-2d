@@ -7,6 +7,7 @@ import { isOffscreenCanvasSupported } from "../utils/dom";
 import { Serializable } from "./../types/common";
 import { PickingOptions, PickingResult } from "../picking";
 import { v4 as uuidv4 } from "uuid";
+import { ProxyEvent, ProxyReturnEvent } from "../types/proxy";
 
 type WebWorkerRenderer<TParams extends any[]> = {
   new (
@@ -18,63 +19,18 @@ type WebWorkerRenderer<TParams extends any[]> = {
 
 type WebWorkerCompatibleRenderer = WebWorkerRenderer<any>;
 
-type PromiseResult<T> =
-  | {
-      promiseResolution: "fulfilled";
-      result: T;
-    }
-  | {
-      promiseResolution: "rejected";
-      error: any;
-    };
+type RenderProxyReturnEvent = ProxyReturnEvent<Renderer>;
 
 type RenderProxyEvent =
   | {
-      type: "constructor";
-      data: {
-        offscreenCanvas: OffscreenCanvas;
-        rendererType: string;
-        rendererParams: unknown[];
-      };
+      methodType: "constructor";
+      methodParams: [
+        offscreenCanvas: OffscreenCanvas,
+        rendererType: string,
+        rendererParams: unknown[]
+      ];
     }
-  | {
-      type: "setSize";
-      data: {
-        size: Size;
-      };
-    }
-  | {
-      type: "setViewport";
-      data: {
-        viewport: Viewport;
-      };
-    }
-  | {
-      type: "setVisibility";
-      data: {
-        visible: boolean;
-      };
-    }
-  | {
-      type: "render";
-      data: {
-        renderPayload: Serializable<any>;
-      };
-    }
-  | {
-      type: "pickObjects";
-      identifier: string;
-      data: {
-        options: PickingOptions;
-      };
-    }
-  | { type: "dispose" };
-
-type RenderProxyReturnEvent = {
-  type: "pickObjects";
-  identifier: string;
-  data: PromiseResult<PickingResult[]>;
-};
+  | ProxyEvent<Renderer>;
 
 const defaultRendererConstructors: WebWorkerCompatibleRenderer[] = [
   Canvas2DSimpleRenderer,
@@ -96,12 +52,8 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
 
     this.postWorkerMessage(
       {
-        type: "constructor",
-        data: {
-          offscreenCanvas,
-          rendererType: rendererConstructor.name,
-          rendererParams: otherParams,
-        },
+        methodType: "constructor",
+        methodParams: [offscreenCanvas, rendererConstructor.name, otherParams],
       },
       [offscreenCanvas]
     );
@@ -109,51 +61,56 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
 
   render(renderPayload: unknown): void {
     this.postWorkerMessage({
-      type: "render",
-      data: {
-        renderPayload,
-      },
+      methodType: "render",
+      methodParams: [renderPayload],
     });
   }
 
   setSize(size: Size): void {
-    this.postWorkerMessage({ type: "setSize", data: { size } });
+    this.postWorkerMessage({ methodType: "setSize", methodParams: [size] });
   }
 
   setViewport(viewport: Viewport): void {
-    this.postWorkerMessage({ type: "setViewport", data: { viewport } });
+    this.postWorkerMessage({
+      methodType: "setViewport",
+      methodParams: [viewport],
+    });
   }
 
   setVisibility(visible: boolean): void {
     this.canvas.style.visibility = visible ? "visible" : "collapse";
     this.postWorkerMessage({
-      type: "setVisibility",
-      data: { visible },
+      methodType: "setVisibility",
+      methodParams: [visible],
     });
   }
 
   pickObjects(options: PickingOptions): Promise<PickingResult[]> {
-    const identifier = uuidv4();
+    const methodIdentifier = uuidv4();
 
     this.postWorkerMessage({
-      type: "pickObjects",
-      data: { options },
-      identifier,
+      methodType: "pickObjects",
+      methodParams: [options],
+      methodIdentifier,
     });
 
     return new Promise((resolve, reject) => {
-      this.listenToWorkerMessage("pickObjects", identifier, pickingResult => {
-        if (pickingResult.promiseResolution === "fulfilled") {
-          resolve(pickingResult.result);
-        } else {
-          reject(pickingResult.error);
+      this.listenToWorkerMessage(
+        "pickObjects",
+        methodIdentifier,
+        pickingResult => {
+          if (pickingResult.promiseResolution === "fulfilled") {
+            resolve(pickingResult.result);
+          } else {
+            reject(pickingResult.error);
+          }
         }
-      });
+      );
     });
   }
 
   dispose(): void {
-    this.postWorkerMessage({ type: "dispose" });
+    this.postWorkerMessage({ methodType: "dispose" });
     this.worker.terminate();
   }
 
@@ -166,19 +123,20 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
   }
 
   private listenToWorkerMessage(
-    type: RenderProxyReturnEvent["type"],
-    identifier: RenderProxyReturnEvent["identifier"],
-    callback: (data: RenderProxyReturnEvent["data"]) => void
+    methodType: RenderProxyReturnEvent["methodType"],
+    methodIdentifier: RenderProxyReturnEvent["methodIdentifier"],
+    callback: (returnValue: RenderProxyReturnEvent["methodReturnValue"]) => void
   ) {
     this.worker.onmessage = ({
       data: proxyEvent,
     }: {
       data: RenderProxyReturnEvent;
     }) => {
-      console.log("lit");
-
-      if (proxyEvent.type === type && proxyEvent.identifier === identifier) {
-        callback(proxyEvent.data);
+      if (
+        proxyEvent.methodType === methodType &&
+        proxyEvent.methodIdentifier === methodIdentifier
+      ) {
+        callback(proxyEvent.methodReturnValue);
       }
     };
   }
@@ -231,43 +189,47 @@ export const exposeToProxy = (
   worker.addEventListener(
     "message",
     ({ data: proxyEvent }: { data: RenderProxyEvent }) => {
-      switch (proxyEvent.type) {
+      switch (proxyEvent.methodType) {
         case "constructor": {
-          const rendererConstructor = getRendererConstructor(
-            proxyEvent.data.rendererType
-          );
+          const [
+            offscreenCanvas,
+            rendererType,
+            rendererParams,
+          ] = proxyEvent.methodParams;
+
+          const rendererConstructor = getRendererConstructor(rendererType);
 
           renderer = new rendererConstructor(
             new RAFRenderScheduler(),
-            proxyEvent.data.offscreenCanvas,
-            ...proxyEvent.data.rendererParams
+            offscreenCanvas,
+            ...rendererParams
           );
           break;
         }
         case "setSize": {
-          renderer.setSize(proxyEvent.data.size);
+          renderer.setSize(...proxyEvent.methodParams);
           break;
         }
         case "setViewport": {
-          renderer.setViewport(proxyEvent.data.viewport);
+          renderer.setViewport(...proxyEvent.methodParams);
           break;
         }
         case "setVisibility": {
-          renderer.setVisibility(proxyEvent.data.visible);
+          renderer.setVisibility(...proxyEvent.methodParams);
           break;
         }
         case "render": {
-          renderer.render(proxyEvent.data.renderPayload);
+          renderer.render(...proxyEvent.methodParams);
           break;
         }
         case "pickObjects": {
           renderer
-            .pickObjects(proxyEvent.data.options)
+            .pickObjects(...proxyEvent.methodParams)
             .then(result =>
               postWorkerMessage({
-                type: "pickObjects",
-                identifier: proxyEvent.identifier,
-                data: {
+                methodType: "pickObjects",
+                methodIdentifier: proxyEvent.methodIdentifier,
+                methodReturnValue: {
                   promiseResolution: "fulfilled",
                   result,
                 },
@@ -275,9 +237,9 @@ export const exposeToProxy = (
             )
             .catch(error =>
               postWorkerMessage({
-                type: "pickObjects",
-                identifier: proxyEvent.identifier,
-                data: {
+                methodType: "pickObjects",
+                methodIdentifier: proxyEvent.methodIdentifier,
+                methodReturnValue: {
                   promiseResolution: "rejected",
                   error,
                 },

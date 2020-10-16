@@ -12,3 +12,5 @@ export type Serializable<T> = T extends string | number | boolean | null
   : T extends object
   ? { [K in keyof T]: Serializable<T[K]> }
   : never;
+
+export type ValueOf<T> = T[keyof T];
