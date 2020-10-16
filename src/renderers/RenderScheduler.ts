@@ -8,15 +8,14 @@ export class RAFRenderScheduler implements IRenderScheduler {
     requestAnimationFrame(renderCallback);
   }
 }
+export class RAFRenderScheduler2 implements IRenderScheduler {
+  scheduleRender(renderCallback: () => void) {
+    requestAnimationFrame(renderCallback);
+  }
+}
 
 export class ImmediateRenderScheduler implements IRenderScheduler {
-  renderCallback: (() => void) | undefined;
-
-  register(renderCallback: () => void) {
-    this.renderCallback = renderCallback;
-  }
-
-  scheduleRender(): void {
-    this.renderCallback?.();
+  scheduleRender(renderCallback: () => void): void {
+    renderCallback();
   }
 }
