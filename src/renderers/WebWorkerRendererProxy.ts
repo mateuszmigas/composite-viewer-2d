@@ -223,12 +223,14 @@ export const exposeToProxy = (
           break;
         }
         case "pickObjects": {
+          const { methodType, methodParams, methodIdentifier } = proxyEvent;
+
           renderer
-            .pickObjects(...proxyEvent.methodParams)
+            .pickObjects(...methodParams)
             .then(result =>
               postWorkerMessage({
-                methodType: "pickObjects",
-                methodIdentifier: proxyEvent.methodIdentifier,
+                methodType,
+                methodIdentifier,
                 methodReturnValue: {
                   promiseResolution: "fulfilled",
                   result,
@@ -237,8 +239,8 @@ export const exposeToProxy = (
             )
             .catch(error =>
               postWorkerMessage({
-                methodType: "pickObjects",
-                methodIdentifier: proxyEvent.methodIdentifier,
+                methodType,
+                methodIdentifier,
                 methodReturnValue: {
                   promiseResolution: "rejected",
                   error,
