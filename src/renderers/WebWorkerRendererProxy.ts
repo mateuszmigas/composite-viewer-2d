@@ -1,3 +1,4 @@
+import { generateGuid } from "./../utils/common";
 import { assertNever } from "./../utils/typeHelpers";
 import { Renderer } from "./Renderer";
 import { IRenderScheduler, RAFRenderScheduler } from "./RenderScheduler";
@@ -6,7 +7,6 @@ import { Size, Viewport } from "../types";
 import { isOffscreenCanvasSupported } from "../utils/dom";
 import { Serializable } from "./../types/common";
 import { PickingOptions, PickingResult } from "../picking";
-import { v4 as uuidv4 } from "uuid";
 import {
   ProxyEvent,
   ProxyReturnEvent,
@@ -90,7 +90,7 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
   }
 
   pickObjects(options: PickingOptions): Promise<PickingResult[]> {
-    const methodIdentifier = uuidv4();
+    const methodIdentifier = generateGuid();
 
     this.postWorkerMessage({
       methodType: "pickObjects",
