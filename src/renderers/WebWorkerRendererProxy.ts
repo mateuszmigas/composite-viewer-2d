@@ -18,6 +18,16 @@ type WebWorkerRenderer<TParams extends any[]> = {
 
 type WebWorkerCompatibleRenderer = WebWorkerRenderer<any>;
 
+type PromiseResult<T> =
+  | {
+      promiseResolution: "fulfilled";
+      result: T;
+    }
+  | {
+      promiseResolution: "rejected";
+      error: any;
+    };
+
 type RenderProxyEvent =
   | {
       type: "constructor";
@@ -63,15 +73,7 @@ type RenderProxyEvent =
 type RenderProxyReturnEvent = {
   type: "pickObjects";
   identifier: string;
-  data:
-    | {
-        promiseResolution: "fulfilled";
-        result: PickingResult[];
-      }
-    | {
-        promiseResolution: "rejected";
-        error: any;
-      };
+  data: PromiseResult<PickingResult[]>;
 };
 
 const defaultRendererConstructors: WebWorkerCompatibleRenderer[] = [
@@ -165,7 +167,7 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
 
   private listenToWorkerMessage(
     type: RenderProxyReturnEvent["type"],
-    identifier: string,
+    identifier: RenderProxyReturnEvent["identifier"],
     callback: (data: RenderProxyReturnEvent["data"]) => void
   ) {
     this.worker.onmessage = ({
