@@ -4,7 +4,7 @@ import { Size, Rectangle } from "../types/geometry";
 import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
 import { Viewport } from "../types/viewport";
 import { Renderer } from "./Renderer";
-import { IRenderScheduler } from "./RenderScheduler";
+import { RenderScheduler } from "./RenderScheduler";
 
 //sheetSize
 //scene2d, worldSize:x,y, viewSize, viewport { zoom, offset }
@@ -26,7 +26,7 @@ export class Canvas2DSimpleRenderer implements Renderer {
   scheduleRender: () => void;
 
   constructor(
-    private renderScheduler: IRenderScheduler,
+    renderScheduler: RenderScheduler,
     private canvas: HTMLCanvasElement | OffscreenCanvas
   ) {
     const context = canvas.getContext("2d");
@@ -37,8 +37,7 @@ export class Canvas2DSimpleRenderer implements Renderer {
     this.canvasContext.globalCompositeOperation = "destination-over"; //todo check performance
 
     this.scheduleRender = () => {
-      if (this.payload && this.isVisible)
-        this.renderScheduler.scheduleRender(this.renderInt);
+      if (this.payload && this.isVisible) renderScheduler(this.renderInt);
     };
   }
 

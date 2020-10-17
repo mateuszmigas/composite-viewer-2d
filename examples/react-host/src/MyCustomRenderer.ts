@@ -5,7 +5,7 @@ import {
   Viewport,
   RenderRectangleObject,
   RenderCircleObject,
-  IRenderScheduler,
+  RenderScheduler,
   hasPropertyInChain,
   PickingOptions,
   PickingResult,
@@ -22,7 +22,7 @@ export class MyCustomRenderer implements Renderer {
   scheduleRender: () => void;
 
   constructor(
-    private renderScheduler: IRenderScheduler,
+    renderScheduler: RenderScheduler,
     private canvas: HTMLCanvasElement | OffscreenCanvas
   ) {
     const context = canvas.getContext("2d");
@@ -33,8 +33,7 @@ export class MyCustomRenderer implements Renderer {
     this.canvasContext.globalCompositeOperation = "destination-over";
 
     this.scheduleRender = () => {
-      if (this.payload && this.isVisible)
-        this.renderScheduler.scheduleRender(this.renderInt);
+      if (this.payload && this.isVisible) renderScheduler(this.renderInt);
     };
   }
 

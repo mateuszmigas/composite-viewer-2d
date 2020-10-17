@@ -1,5 +1,5 @@
 import React from "react";
-import { RAFRenderScheduler } from "../../../lib";
+import { generateRandomRectangles } from "./helpers";
 import { MyCustomRenderer } from "./MyCustomRenderer";
 import {
   Canvas2DSimpleRenderer,
@@ -9,7 +9,9 @@ import {
   Viewport,
   ViewportManipulator,
   createCanvasElement,
+  createOnDemandRAFRenderScheduler,
   tryCreateProxy,
+  createContinuousRenderScheduler,
 } from "./viewer2d";
 
 interface Viewer2DHostProps {}
@@ -36,32 +38,9 @@ const createCanvasWorker = (name: string) =>
     name: name,
   });
 
-// const w = createCanvasWorker();
-// w.postMessage("cyci");
-// w.onmessage = e => console.log("message back");
-
-// const createDefinition = <TRendererPayload, TRenderer>(
-//   name: string,
-//   renderer: Renderer,
-//   payloadSelector: (payload: TRendererPayload) => string
-// ) => {
-//   return {
-//     name: "some canvas 1 ",
-//     // renderer: new MyCustomRenderer(
-//     //   new RAFRenderScheduler(),
-//     //   this.createCanvas(101)
-//     // ),
-//     renderer: tryCreateProxy(
-//       () => createCanvasWorker("someworker3"),
-//       MyCustomRenderer,
-//       [this.createCanvas(101)]
-//     ),
-//     payloadSelector: (payload: MyRenderPayload) => ({
-//       rectangles: payload.someRectangles2,
-//     }),
-//     enabled: true,
-//   };
-// };
+export const createRenderers = <TRenderPayload,>() => {
+  return 3;
+};
 
 export class Viewer2DHost extends React.PureComponent<
   Viewer2DHostProps,
@@ -97,36 +76,37 @@ export class Viewer2DHost extends React.PureComponent<
     const renderers = [
       {
         name: "some canvas 1 ",
-        // renderer: new MyCustomRenderer(
-        //   new RAFRenderScheduler(),
-        //   this.createCanvas(101)
-        // ),
-        renderer: tryCreateProxy(
-          () => createCanvasWorker("someworker3"),
-          MyCustomRenderer,
-          [this.createCanvas(101)]
+        renderer: new Canvas2DSimpleRenderer(
+          createContinuousRenderScheduler(),
+          this.createCanvas(101)
         ),
-        payloadSelector: (payload: MyRenderPayload) => ({
-          rectangles: payload.someRectangles2,
-        }),
-        enabled: true,
-      },
-      {
-        name: "some canvas 2",
-        // renderer: new Canvas2DSimpleRenderer(
-        //   new RAFRenderScheduler(),
-        //   this.createCanvas(102)
+        // renderer: tryCreateProxy(
+        //   () => createCanvasWorker("someworker3"),
+        //   MyCustomRenderer,
+        //   [this.createCanvas(101)]
         // ),
-        renderer: tryCreateProxy(
-          () => createCanvasWorker("someworker2"),
-          Canvas2DSimpleRenderer,
-          [this.createCanvas(102)]
-        ),
         payloadSelector: (payload: MyRenderPayload) => ({
           rectangles: payload.someRectangles1,
         }),
         enabled: true,
       },
+      // {
+      //   name: "some canvas 2",
+      //   // renderer: new Canvas2DSimpleRenderer(
+      //   //   new RAFRenderScheduler(),
+      //   //   this.createCanvas(102)
+      //   // ),
+      //   renderer: tryCreateProxy(
+      //     () => createCanvasWorker("someworker2"),
+      //     { enablePerformanceMonitor: true },
+      //     Canvas2DSimpleRenderer,
+      //     [this.createCanvas(102)]
+      //   ),
+      //   payloadSelector: (payload: MyRenderPayload) => ({
+      //     rectangles: payload.someRectangles2,
+      //   }),
+      //   enabled: false,
+      // },
     ];
 
     this.renderDispatcher = new RenderDispatcher(
@@ -158,6 +138,7 @@ export class Viewer2DHost extends React.PureComponent<
           color: randomColor(),
         },
       ],
+      // someRectangles1: generateRandomRectangles(100),
       someRectangles2: [
         {
           type: "Rectangle",

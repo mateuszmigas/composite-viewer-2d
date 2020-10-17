@@ -2,6 +2,7 @@ todo:
 - better strongly typed api for creating renderers
 - treejs plugin
 - pixijs plugin
+- react plugin
 - check if ww terminate is not called before dispose
 - move render mode and profiling to render scheduler
 - render params in schedule renderer
@@ -10,5 +11,13 @@ todo:
 - add angular example
 - add vue example
 
+profiling:
+- observer memory usage, no leaks
+- check idle state, should be min cpu and no gpu
+
 done:
 - make sure there is single render at start
+
+ideas:
+- each schedule render needs to invoke requestAnimationFrame otherwise
+it gets desynchronized (ww and mt)

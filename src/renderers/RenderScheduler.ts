@@ -1,21 +1,37 @@
-export interface IRenderScheduler {
-  //  register(renderCallback: () => void): void;
-  scheduleRender(renderCallback: () => void): void;
-}
+import { IRenderingPerformanceMonitor } from "./RenderingPerformanceMonitor";
 
-export class RAFRenderScheduler implements IRenderScheduler {
-  scheduleRender(renderCallback: () => void) {
-    requestAnimationFrame(renderCallback);
-  }
-}
-export class RAFRenderScheduler2 implements IRenderScheduler {
-  scheduleRender(renderCallback: () => void) {
-    requestAnimationFrame(renderCallback);
-  }
-}
+export type RenderScheduler = (renderCallback: () => void) => void;
 
-export class ImmediateRenderScheduler implements IRenderScheduler {
-  scheduleRender(renderCallback: () => void): void {
-    renderCallback();
+export const createOnDemandRAFRenderScheduler = (
+  performanceMonitor?: IRenderingPerformanceMonitor
+): RenderScheduler => {
+  if (performanceMonitor) {
+    return (renderCallback: () => void) => {
+      requestAnimationFrame(() => {
+        performanceMonitor.start();
+        renderCallback();
+        performanceMonitor.end();
+      });
+    };
+  } else {
+    return (renderCallback: () => void) =>
+      requestAnimationFrame(renderCallback);
   }
-}
+};
+
+export const createContinuousRenderScheduler = (): RenderScheduler => {
+  let callback: () => void;
+
+  function renderLoop(time: number) {
+    callback?.();
+    requestAnimationFrame(renderLoop);
+  }
+
+  requestAnimationFrame(renderLoop);
+
+  return (renderCallback: () => void) => (callback = renderCallback);
+};
+
+export const createOnDemandImmediateRenderScheduler = (): RenderScheduler => (
+  renderCallback: () => void
+) => renderCallback();

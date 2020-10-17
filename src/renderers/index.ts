@@ -3,3 +3,4 @@ export * from "./Canvas2DSimpleRenderer";
 export * from "./WebWorkerRendererProxy";
 export * from "./RenderScheduler";
 export * from "./Renderer";
+export * from "./RenderingPerformanceMonitor";
