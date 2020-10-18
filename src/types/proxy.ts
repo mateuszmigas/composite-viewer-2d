@@ -25,14 +25,14 @@ export type ProxyEvent<T> = ValueOf<
     [P in keyof T]: T[P] extends (...args: infer A) => any
       ? ReturnType<T[P]> extends void
         ? A extends []
-          ? { methodType: P }
-          : { methodType: P; methodParams: Parameters<T[P]> }
+          ? { messageType: P }
+          : { messageType: P; messageData: Parameters<T[P]> }
         : A extends []
-        ? { methodType: P; methodIdentifier: string }
+        ? { methodType: P; messageIdentifier: string }
         : {
-            methodType: P;
-            methodParams: Parameters<T[P]>;
-            methodIdentifier: string;
+            messageType: P;
+            messageData: Parameters<T[P]>;
+            messageIdentifier: string;
           }
       : never;
   }
@@ -45,21 +45,21 @@ export type ProxyReturnEvent<T> = ValueOf<
         ? never
         : ReturnType<T[P]> extends Promise<infer A>
         ? {
-            methodType: P;
-            methodIdentifier: string;
-            methodReturnValue: ProxyPromiseResult<A>;
+            messageType: P;
+            messageIdentifier?: string;
+            messageReturnValue: ProxyPromiseResult<A>;
           }
         : {
-            methodType: P;
-            methodIdentifier: string;
-            methodReturnValue: ReturnType<T[P]>;
+            messageType: P;
+            messageIdentifier?: string;
+            messageReturnValue: ReturnType<T[P]>;
           }
       : never;
   }
 >;
 
 export type ProxyReturnEventListener<T> = {
-  methodCallback: (
-    returnValue: ProxyReturnEvent<T>["methodReturnValue"]
+  messageCallback: (
+    returnValue: ProxyReturnEvent<T>["messageReturnValue"]
   ) => void;
-} & Omit<ProxyReturnEvent<T>, "methodReturnValue">;
+} & Omit<ProxyReturnEvent<T>, "messageReturnValue">;

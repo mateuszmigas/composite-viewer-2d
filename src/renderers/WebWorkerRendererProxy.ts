@@ -22,15 +22,22 @@ import {
 } from "../types/proxy";
 
 type WebWorkerCompatibleRenderer = ProxyRenderer<any, any>;
-type RenderProxyReturnEvent = ProxyReturnEvent<Renderer>;
-type RenderProxyReturnEventListener = ProxyReturnEventListener<Renderer>;
+
 type RenderProxyOptions = {
   enablePerformanceMonitor: boolean;
 };
+
+type RenderProxyReturnEvent = ProxyReturnEvent<Renderer>;
+type RenderProxyReturnEventListener = ProxyReturnEventListener<Renderer>;
+type RenderProxyBackEvent = {
+  messageType: "renderingStats";
+  messageData: RenderingStats;
+};
+
 type RenderProxyEvent =
   | {
-      methodType: "createRenderer";
-      methodParams: [
+      messageType: "createRenderer";
+      messageData: [
         offscreenCanvas: OffscreenCanvas,
         rendererType: string,
         rendererParams: unknown[],
@@ -61,8 +68,8 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
 
     this.postWorkerMessage(
       {
-        methodType: "createRenderer",
-        methodParams: [
+        messageType: "createRenderer",
+        messageData: [
           offscreenCanvas,
           rendererConstructor.name,
           otherParams,
@@ -71,49 +78,58 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
       },
       [offscreenCanvas]
     );
+
+    if (proxyOptions.enablePerformanceMonitor) {
+      this.listenToMessage({
+        messageType: "renderingStats",
+        messageCallback: stats => {
+          console.log("stats lol", stats);
+        },
+      });
+    }
   }
 
   render(renderPayload: unknown): void {
     this.postWorkerMessage({
-      methodType: "render",
-      methodParams: [renderPayload],
+      messageType: "render",
+      messageData: [renderPayload],
     });
   }
 
   setSize(size: Size): void {
-    this.postWorkerMessage({ methodType: "setSize", methodParams: [size] });
+    this.postWorkerMessage({ messageType: "setSize", messageData: [size] });
   }
 
   setViewport(viewport: Viewport): void {
     this.postWorkerMessage({
-      methodType: "setViewport",
-      methodParams: [viewport],
+      messageType: "setViewport",
+      messageData: [viewport],
     });
   }
 
   setVisibility(visible: boolean): void {
     this.canvas.style.visibility = visible ? "visible" : "collapse";
     this.postWorkerMessage({
-      methodType: "setVisibility",
-      methodParams: [visible],
+      messageType: "setVisibility",
+      messageData: [visible],
     });
   }
 
   pickObjects(options: PickingOptions): Promise<PickingResult[]> {
-    const methodIdentifier = generateGuid();
-    const methodType = "pickObjects";
+    const messageIdentifier = generateGuid();
+    const messageType = "pickObjects";
 
     this.postWorkerMessage({
-      methodType,
-      methodParams: [options],
-      methodIdentifier,
+      messageType,
+      messageData: [options],
+      messageIdentifier,
     });
 
     return new Promise((resolve, reject) => {
-      this.listenToWorkerMessage({
-        methodType,
-        methodIdentifier,
-        methodCallback: pickingResult => {
+      this.listenToCallbackMessage({
+        messageType,
+        messageIdentifier,
+        messageCallback: pickingResult => {
           if (pickingResult.promiseResolution === "fulfilled") {
             resolve(pickingResult.result);
           } else {
@@ -125,7 +141,7 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
   }
 
   dispose(): void {
-    this.postWorkerMessage({ methodType: "dispose" });
+    this.postWorkerMessage({ messageType: "dispose" });
     this.worker.terminate();
   }
 
@@ -137,18 +153,34 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
     else this.worker.postMessage(event);
   }
 
-  private listenToWorkerMessage(listener: RenderProxyReturnEventListener) {
-    const { methodType, methodIdentifier, methodCallback } = listener;
+  private listenToMessage(listener: {
+    messageType: "renderingStats";
+    messageCallback: (stats: RenderingStats) => void;
+  }) {
+    const { messageType, messageCallback } = listener;
+    this.worker.onmessage = ({
+      data: proxyEvent,
+    }: {
+      data: RenderProxyBackEvent;
+    }) => {
+      if (proxyEvent.messageType === messageType) {
+        messageCallback(proxyEvent.messageData);
+      }
+    };
+  }
+
+  private listenToCallbackMessage(listener: RenderProxyReturnEventListener) {
+    const { messageType, messageIdentifier, messageCallback } = listener;
     this.worker.onmessage = ({
       data: proxyEvent,
     }: {
       data: RenderProxyReturnEvent;
     }) => {
       if (
-        proxyEvent.methodType === methodType &&
-        proxyEvent.methodIdentifier === methodIdentifier
+        proxyEvent.messageType === messageType &&
+        proxyEvent.messageIdentifier === messageIdentifier
       ) {
-        methodCallback(proxyEvent.methodReturnValue);
+        messageCallback(proxyEvent.messageReturnValue);
       }
     };
   }
@@ -199,26 +231,30 @@ export const exposeToProxy = (
     );
   };
 
-  const postWorkerMessage = (event: RenderProxyReturnEvent) =>
-    worker.postMessage(event);
+  const postWorkerMessage = (
+    event: RenderProxyReturnEvent | RenderProxyBackEvent
+  ) => worker.postMessage(event);
 
   worker.addEventListener(
     "message",
     ({ data: proxyEvent }: { data: RenderProxyEvent }) => {
-      switch (proxyEvent.methodType) {
+      switch (proxyEvent.messageType) {
         case "createRenderer": {
           const [
             offscreenCanvas,
             rendererType,
             rendererParams,
             proxyOptions,
-          ] = proxyEvent.methodParams;
+          ] = proxyEvent.messageData;
 
           const rendererConstructor = getRendererConstructor(rendererType);
           const renderScheduler = proxyOptions.enablePerformanceMonitor
             ? createOnDemandRAFRenderScheduler(
                 new RenderingPerformanceMonitor((stats: RenderingStats) =>
-                  console.log("statz", stats)
+                  postWorkerMessage({
+                    messageType: "renderingStats",
+                    messageData: stats,
+                  })
                 )
               )
             : createOnDemandRAFRenderScheduler();
@@ -231,31 +267,31 @@ export const exposeToProxy = (
           break;
         }
         case "setSize": {
-          renderer.setSize(...proxyEvent.methodParams);
+          renderer.setSize(...proxyEvent.messageData);
           break;
         }
         case "setViewport": {
-          renderer.setViewport(...proxyEvent.methodParams);
+          renderer.setViewport(...proxyEvent.messageData);
           break;
         }
         case "setVisibility": {
-          renderer.setVisibility(...proxyEvent.methodParams);
+          renderer.setVisibility(...proxyEvent.messageData);
           break;
         }
         case "render": {
-          renderer.render(...proxyEvent.methodParams);
+          renderer.render(...proxyEvent.messageData);
           break;
         }
         case "pickObjects": {
-          const { methodType, methodParams, methodIdentifier } = proxyEvent;
+          const { messageType, messageData, messageIdentifier } = proxyEvent;
 
           renderer
-            .pickObjects(...methodParams)
+            .pickObjects(...messageData)
             .then(result =>
               postWorkerMessage({
-                methodType,
-                methodIdentifier,
-                methodReturnValue: {
+                messageType,
+                messageIdentifier,
+                messageReturnValue: {
                   promiseResolution: "fulfilled",
                   result,
                 },
@@ -263,9 +299,9 @@ export const exposeToProxy = (
             )
             .catch(error =>
               postWorkerMessage({
-                methodType,
-                methodIdentifier,
-                methodReturnValue: {
+                messageType,
+                messageIdentifier,
+                messageReturnValue: {
                   promiseResolution: "rejected",
                   error,
                 },

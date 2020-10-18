@@ -1,5 +1,5 @@
 todo:
-- better strongly typed api for creating renderers
+- monitors for new solution
 - treejs plugin
 - pixijs plugin
 - react plugin

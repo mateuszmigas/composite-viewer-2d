@@ -19,11 +19,15 @@ export const createOnDemandRAFRenderScheduler = (
   }
 };
 
-export const createContinuousRenderScheduler = (): RenderScheduler => {
+export const createContinuousRenderScheduler = (
+  performanceMonitor?: IRenderingPerformanceMonitor
+): RenderScheduler => {
   let callback: () => void;
 
   function renderLoop(time: number) {
-    callback?.();
+    performanceMonitor?.start();
+    callback();
+    performanceMonitor?.end();
     requestAnimationFrame(renderLoop);
   }
 

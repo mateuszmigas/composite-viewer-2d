@@ -1,9 +1,4 @@
 import React from "react";
-import { createRenderer } from "react-dom/test-utils";
-import { GenericRender } from "../../../lib";
-import { RendererController } from "../../../lib/types/renderMap";
-import { generateRandomRectangles } from "./helpers";
-import { MyCustomRenderer } from "./MyCustomRenderer";
 import {
   Canvas2DSimpleRenderer,
   Color,
@@ -12,12 +7,7 @@ import {
   Viewport,
   ViewportManipulator,
   createCanvasElement,
-  createOnDemandRAFRenderScheduler,
-  tryCreateProxy,
-  createContinuousRenderScheduler,
   RendererCollection,
-  RenderScheduler,
-  Renderer,
 } from "./viewer2d";
 
 interface Viewer2DHostProps {}
@@ -75,8 +65,11 @@ export class Viewer2DHost extends React.PureComponent<
       (newViewport: Viewport) => this.renderDispatcher.setViewport(newViewport)
     );
 
-    const builder = new RendererCollection<MyRenderPayload>(createCanvasWorker);
-    builder.addRenderer(
+    const rendererCollection = new RendererCollection<MyRenderPayload>(
+      { renderMode: "onDemand" },
+      createCanvasWorker
+    );
+    rendererCollection.addRenderer(
       "cycki1",
       Canvas2DSimpleRenderer,
       [this.createCanvas(101)],
@@ -85,7 +78,7 @@ export class Viewer2DHost extends React.PureComponent<
       }),
       true
     );
-    builder.addOffscreenRenderer(
+    rendererCollection.addOffscreenRenderer(
       "cycki2",
       Canvas2DSimpleRenderer,
       [this.createCanvas(102)],
@@ -95,12 +88,12 @@ export class Viewer2DHost extends React.PureComponent<
       true
     );
 
+    //for debug only
+    //displayControllerPanel
+
     this.renderDispatcher = new RenderDispatcher(
       this.hostElement.current,
-      {
-        renderMode: "onDemand",
-      },
-      builder.getRenderers(),
+      rendererCollection.getRenderers(),
       this.fullRender
     );
 

@@ -1,13 +1,13 @@
 import { RenderMode } from "./../types/common";
 import Stats from "stats.js";
-import { RendrerMap } from "../types/renderMap";
+import { RendererController } from "../renderers/RendererController";
 
 export class DebugInfo {
   private stats = new Stats();
 
   constructor(
     hostElement: HTMLElement,
-    renderers: RendrerMap<any>[],
+    renderers: RendererController<any>[],
     options: { renderMode: RenderMode }
   ) {
     this.stats.showPanel(0);
@@ -25,7 +25,7 @@ export class DebugInfo {
 }
 
 const createPanel = (
-  renderers: RendrerMap<any>[],
+  renderers: RendererController<any>[],
   options: { renderMode: RenderMode }
 ): HTMLElement => {
   const div = document.createElement("div");
@@ -40,15 +40,15 @@ const createPanel = (
   renderers.forEach(r => {
     const input = document.createElement("input");
     input.type = "checkbox";
-    input.id = r.name;
+    input.id = r.id;
     input.checked = !!r.enabled;
     input.onchange = () => {
       r.enabled = input.checked;
       r.renderer.setVisibility(r.enabled);
     };
     const label = document.createElement("label");
-    label.htmlFor = r.name;
-    label.textContent = r.name;
+    label.htmlFor = r.id;
+    label.textContent = r.id;
     div.appendChild(input);
     div.appendChild(label);
     div.appendChild(document.createElement("br"));

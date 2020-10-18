@@ -1,43 +1,23 @@
-import { DebugInfo } from "../debug/domDebugHelpers";
 import { PickingOptions, PickingResult } from "../picking";
-import { RenderMode, Unsubscribe } from "../types/common";
-import { Rectangle, Size } from "../types/geometry";
-import { RendererController, RendrerMap } from "../types/renderMap";
+import { Unsubscribe } from "../types/common";
+import { Size } from "../types/geometry";
+import { RendererController } from "./RendererController";
 import { Viewport } from "../types/viewport";
 import { observeElementBoundingRect } from "../utils/dom";
-import { Renderer } from "./Renderer";
 
-export type Options = {
-  renderMode: RenderMode;
-  workerFactory?: (name: string) => Worker;
-};
-
-const defaultOptions: Options = {
-  renderMode: "onDemand",
-};
-
-//CompositeRenderer
 export class RenderDispatcher<TRenderPayload> {
   isReady = false;
-  //debugInfo: DebugInfo;
-  animationFrameHandle = 0;
   resizeObserveUnsubscribe: Unsubscribe;
 
   constructor(
     hostElement: HTMLElement,
-    private options: Options = defaultOptions,
     private renderers: RendererController<TRenderPayload>[],
-    // private rcs: RendererController<TRenderPayload, any>[],
     private onReadyToRender: () => void
   ) {
-    //this.debugInfo = new DebugInfo(hostElement, renderers, options);
-
     this.resizeObserveUnsubscribe = observeElementBoundingRect(
       hostElement,
       rectangle => this.resize(rectangle)
     );
-
-    // this.renderers.forEach(r => r.renderer.setVisibility(!!r.enabled));
   }
 
   setViewport(viewport: Viewport) {
@@ -73,16 +53,12 @@ export class RenderDispatcher<TRenderPayload> {
   }
 
   private resize(size: Size) {
-    this.forEachRenderer(r => r.setSize(size));
+    this.renderers.forEach(s => s.renderer.setSize(size));
 
     //first resize
     if (!this.isReady) {
       this.isReady = true;
       this.onReadyToRender();
     }
-  }
-
-  private forEachRenderer(callback: (renderer: Renderer) => void) {
-    this.renderers.forEach(r => callback(r.renderer));
   }
 }
