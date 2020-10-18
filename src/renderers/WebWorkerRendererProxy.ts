@@ -18,18 +18,10 @@ import {
   ProxyEvent,
   ProxyReturnEvent,
   ProxyReturnEventListener,
+  ProxyRenderer,
 } from "../types/proxy";
 
-type WebWorkerRenderer<TParams extends any[]> = {
-  new (
-    renderScheduler: RenderScheduler,
-    canvas: HTMLCanvasElement | OffscreenCanvas,
-    ...otherParams: Serializable<TParams>
-  ): Renderer;
-};
-
-type WebWorkerCompatibleRenderer = WebWorkerRenderer<any>;
-
+type WebWorkerCompatibleRenderer = ProxyRenderer<any, any>;
 type RenderProxyReturnEvent = ProxyReturnEvent<Renderer>;
 type RenderProxyReturnEventListener = ProxyReturnEventListener<Renderer>;
 type RenderProxyOptions = {
@@ -51,14 +43,15 @@ const defaultRendererConstructors: WebWorkerCompatibleRenderer[] = [
   Canvas2DSimpleRenderer,
 ];
 
-export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
+export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
+  implements Renderer {
   worker: Worker;
   canvas: HTMLCanvasElement;
 
   constructor(
     workerFactory: () => Worker,
     proxyOptions: RenderProxyOptions,
-    rendererConstructor: WebWorkerRenderer<TParams>,
+    rendererConstructor: ProxyRenderer<TRendererPayload, TParams>,
     rendererParams: [HTMLCanvasElement, ...Serializable<TParams>]
   ) {
     const [canvas, ...otherParams] = rendererParams;
@@ -161,10 +154,10 @@ export class WebWorkerRendererProxy<TParams extends any[]> implements Renderer {
   }
 }
 
-export const tryCreateProxy = <TParams extends any[]>(
+export const tryCreateProxy = <TRendererPayload, TParams extends any[]>(
   workerFactory: () => Worker,
   proxyOptions: RenderProxyOptions,
-  rendererConstructor: WebWorkerRenderer<TParams>,
+  rendererConstructor: ProxyRenderer<TRendererPayload, TParams>,
   rendererParams: [HTMLCanvasElement, ...Serializable<TParams>]
 ) => {
   if (isOffscreenCanvasSupported()) {

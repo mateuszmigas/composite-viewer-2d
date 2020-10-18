@@ -3,7 +3,7 @@ import { PickingOptions, PickingResult } from "../picking";
 import { Size, Rectangle } from "../types/geometry";
 import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
 import { Viewport } from "../types/viewport";
-import { Renderer } from "./Renderer";
+import { GenericRender, Renderer } from "./Renderer";
 import { RenderScheduler } from "./RenderScheduler";
 
 //sheetSize
@@ -15,7 +15,12 @@ import { RenderScheduler } from "./RenderScheduler";
 //viewport { size, zoom, offset } View2D View3S
 //viewerCanvas 3000x2000\
 
-export class Canvas2DSimpleRenderer implements Renderer {
+type RenderPayload = {
+  rectangles: RenderRectangleObject[];
+  circles: RenderCircleObject[];
+};
+
+export class Canvas2DSimpleRenderer implements GenericRender<RenderPayload> {
   private canvasContext:
     | CanvasRenderingContext2D
     | OffscreenCanvasRenderingContext2D;
@@ -66,10 +71,7 @@ export class Canvas2DSimpleRenderer implements Renderer {
 
   payload: any;
 
-  render(renderPayload: {
-    rectangles?: RenderRectangleObject[];
-    circles?: RenderCircleObject[];
-  }): void {
+  render(renderPayload: RenderPayload): void {
     this.payload = renderPayload;
     this.scheduleRender();
   }
@@ -112,7 +114,7 @@ export class Canvas2DSimpleRenderer implements Renderer {
   };
 
   pickObjects(options: PickingOptions): Promise<PickingResult[]> {
-    return Promise.resolve(["a", "b"] as any);
+    return Promise.resolve(this.isVisible ? ["a", "b"] : ([] as any));
   }
 
   dispose(): void {}

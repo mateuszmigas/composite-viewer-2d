@@ -2,7 +2,7 @@ import { DebugInfo } from "../debug/domDebugHelpers";
 import { PickingOptions, PickingResult } from "../picking";
 import { RenderMode, Unsubscribe } from "../types/common";
 import { Rectangle, Size } from "../types/geometry";
-import { RendrerMap } from "../types/renderMap";
+import { RendererController, RendrerMap } from "../types/renderMap";
 import { Viewport } from "../types/viewport";
 import { observeElementBoundingRect } from "../utils/dom";
 import { Renderer } from "./Renderer";
@@ -19,26 +19,25 @@ const defaultOptions: Options = {
 //CompositeRenderer
 export class RenderDispatcher<TRenderPayload> {
   isReady = false;
-  debugInfo: DebugInfo;
+  //debugInfo: DebugInfo;
   animationFrameHandle = 0;
   resizeObserveUnsubscribe: Unsubscribe;
 
   constructor(
     hostElement: HTMLElement,
     private options: Options = defaultOptions,
-    private renderers: RendrerMap<TRenderPayload>[],
+    private renderers: RendererController<TRenderPayload>[],
+    // private rcs: RendererController<TRenderPayload, any>[],
     private onReadyToRender: () => void
   ) {
-    this.debugInfo = new DebugInfo(hostElement, renderers, options);
+    //this.debugInfo = new DebugInfo(hostElement, renderers, options);
 
     this.resizeObserveUnsubscribe = observeElementBoundingRect(
       hostElement,
       rectangle => this.resize(rectangle)
     );
 
-    this.renderers.forEach(r => r.renderer.setVisibility(!!r.enabled));
-
-    this.requestRender();
+    // this.renderers.forEach(r => r.renderer.setVisibility(!!r.enabled));
   }
 
   setViewport(viewport: Viewport) {
@@ -63,9 +62,7 @@ export class RenderDispatcher<TRenderPayload> {
 
   async pickObjects(options: PickingOptions): Promise<PickingResult[]> {
     const result = await Promise.all(
-      this.renderers
-        .filter(r => r.enabled)
-        .map(r => r.renderer.pickObjects(options))
+      this.renderers.map(r => r.renderer.pickObjects(options))
     );
     return result.flat();
   }
@@ -88,15 +85,4 @@ export class RenderDispatcher<TRenderPayload> {
   private forEachRenderer(callback: (renderer: Renderer) => void) {
     this.renderers.forEach(r => callback(r.renderer));
   }
-
-  private requestRender() {
-    this.animationFrameHandle = requestAnimationFrame(this.renderLoop);
-  }
-
-  private renderLoop = (time: number) => {
-    this.debugInfo.onLoopBegin();
-
-    this.debugInfo.onLoopEnd();
-    this.requestRender();
-  };
 }

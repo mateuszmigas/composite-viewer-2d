@@ -1,4 +1,6 @@
-import { ValueOf } from "./common";
+import { GenericRender } from "./../renderers/Renderer";
+import { Renderer, RenderScheduler } from "../renderers";
+import { Serializable, ValueOf } from "./common";
 
 type ProxyPromiseResult<T> =
   | {
@@ -9,6 +11,14 @@ type ProxyPromiseResult<T> =
       promiseResolution: "rejected";
       error: any;
     };
+
+export type ProxyRenderer<TRendererPayload, TParams extends any[]> = {
+  new (
+    renderScheduler: RenderScheduler,
+    canvas: HTMLCanvasElement | OffscreenCanvas,
+    ...otherParams: Serializable<TParams>
+  ): GenericRender<TRendererPayload>;
+};
 
 export type ProxyEvent<T> = ValueOf<
   {

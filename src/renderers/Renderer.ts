@@ -26,3 +26,12 @@ export type Renderer = {
   pickObjects(options: PickingOptions): Promise<PickingResult[]>;
   dispose(): void;
 };
+
+export interface GenericRender<T> extends Renderer {
+  render(renderPayload: T): void;
+  setSize(size: Size): void;
+  setViewport(viewport: Viewport): void;
+  setVisibility(visible: boolean): void;
+  pickObjects(options: PickingOptions): Promise<PickingResult[]>;
+  dispose(): void;
+}
