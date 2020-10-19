@@ -1,3 +1,4 @@
+import { RenderingOptions } from "./RendererControllersBuilder";
 import {
   RenderingPerformanceMonitor,
   RenderingStats,
@@ -6,14 +7,13 @@ import { generateGuid } from "./../utils/common";
 import { assertNever } from "./../utils/typeHelpers";
 import { Renderer } from "./Renderer";
 import {
-  createOnDemandRAFRenderScheduler,
+  createRenderSchedulerForMode,
   enhanceWithProfiler,
-  RenderScheduler,
 } from "./RenderScheduler";
 import { Canvas2DSimpleRenderer } from "./Canvas2DSimpleRenderer";
 import { Size, Viewport } from "../types";
 import { isOffscreenCanvasSupported } from "../utils/dom";
-import { Serializable } from "./../types/common";
+import { RenderMode, Serializable } from "./../types/common";
 import { PickingOptions, PickingResult } from "../picking";
 import {
   ProxyEvent,
@@ -23,18 +23,18 @@ import {
 } from "../types/proxy";
 
 type WebWorkerCompatibleRenderer = ProxyRenderer<any, any>;
-
-type RenderProxyOptions = {
-  enablePerformanceMonitor: boolean;
+type ProxyOptions = {
+  renderMode: RenderMode;
+  profiling?: {
+    onRendererStatsUpdated: (renderingStats: RenderingStats) => void;
+  };
 };
-
 type RenderProxyReturnEvent = ProxyReturnEvent<Renderer>;
 type RenderProxyReturnEventListener = ProxyReturnEventListener<Renderer>;
 type RenderProxyBackEvent = {
   messageType: "renderingStats";
   messageData: RenderingStats;
 };
-
 type RenderProxyEvent =
   | {
       messageType: "createRenderer";
@@ -42,7 +42,10 @@ type RenderProxyEvent =
         offscreenCanvas: OffscreenCanvas,
         rendererType: string,
         rendererParams: unknown[],
-        options: RenderProxyOptions
+        options: {
+          renderMode: RenderMode;
+          enableProfiling: boolean;
+        }
       ];
     }
   | ProxyEvent<Renderer>;
@@ -58,7 +61,7 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
 
   constructor(
     workerFactory: () => Worker,
-    proxyOptions: RenderProxyOptions,
+    renderingOptions: ProxyOptions,
     rendererConstructor: ProxyRenderer<TRendererPayload, TParams>,
     rendererParams: [HTMLCanvasElement, ...Serializable<TParams>]
   ) {
@@ -74,18 +77,20 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
           offscreenCanvas,
           rendererConstructor.name,
           otherParams,
-          proxyOptions,
+          {
+            renderMode: renderingOptions.renderMode,
+            enableProfiling: !!renderingOptions.profiling,
+          },
         ],
       },
       [offscreenCanvas]
     );
 
-    if (proxyOptions.enablePerformanceMonitor) {
+    if (renderingOptions.profiling) {
       this.listenToMessage({
         messageType: "renderingStats",
-        messageCallback: stats => {
-          console.log("stats lol", stats);
-        },
+        messageCallback: stats =>
+          renderingOptions.profiling?.onRendererStatsUpdated(stats),
       });
     }
   }
@@ -189,22 +194,29 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
 
 export const tryCreateProxy = <TRendererPayload, TParams extends any[]>(
   workerFactory: () => Worker,
-  proxyOptions: RenderProxyOptions,
+  options: ProxyOptions,
   rendererConstructor: ProxyRenderer<TRendererPayload, TParams>,
   rendererParams: [HTMLCanvasElement, ...Serializable<TParams>]
 ) => {
   if (isOffscreenCanvasSupported()) {
     return new WebWorkerRendererProxy(
       workerFactory,
-      proxyOptions,
+      options,
       rendererConstructor,
       rendererParams
     );
   } else {
-    return new rendererConstructor(
-      createOnDemandRAFRenderScheduler(),
-      ...rendererParams
-    );
+    const renderScheduler = createRenderSchedulerForMode(options.renderMode);
+    const enhancedRenderScheduler = options.profiling
+      ? enhanceWithProfiler(
+          renderScheduler,
+          new RenderingPerformanceMonitor(renderingStats =>
+            options.profiling?.onRendererStatsUpdated(renderingStats)
+          )
+        )
+      : renderScheduler;
+
+    return new rendererConstructor(enhancedRenderScheduler, ...rendererParams);
   }
 };
 
@@ -245,15 +257,17 @@ export const exposeToProxy = (
             offscreenCanvas,
             rendererType,
             rendererParams,
-            proxyOptions,
+            options,
           ] = proxyEvent.messageData;
 
           const rendererConstructor = getRendererConstructor(rendererType);
-          const rafScheduler = createOnDemandRAFRenderScheduler();
 
-          const renderScheduler = proxyOptions.enablePerformanceMonitor
+          const renderScheduler = createRenderSchedulerForMode(
+            options.renderMode
+          );
+          const enhancedRenderScheduler = options.enableProfiling
             ? enhanceWithProfiler(
-                rafScheduler,
+                renderScheduler,
                 new RenderingPerformanceMonitor(stats =>
                   postWorkerMessage({
                     messageType: "renderingStats",
@@ -261,10 +275,10 @@ export const exposeToProxy = (
                   })
                 )
               )
-            : rafScheduler;
+            : renderScheduler;
 
           renderer = new rendererConstructor(
-            renderScheduler,
+            enhancedRenderScheduler,
             offscreenCanvas,
             ...rendererParams
           );

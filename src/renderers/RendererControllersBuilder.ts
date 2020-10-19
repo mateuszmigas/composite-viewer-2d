@@ -1,5 +1,5 @@
+import { RenderMode } from "./../types/common";
 import {
-  IRenderingPerformanceMonitor,
   RenderingPerformanceMonitor,
   RenderingStats,
 } from "./RenderingPerformanceMonitor";
@@ -9,38 +9,48 @@ import { ProxyRenderer } from "../types/proxy";
 import { RendererController } from "./RendererController";
 import { GenericRender } from "./Renderer";
 import {
-  createContinuousRenderScheduler,
-  createOnDemandRAFRenderScheduler,
+  createRenderSchedulerForMode,
   enhanceWithProfiler,
   RenderScheduler,
 } from "./RenderScheduler";
 
 //todo, different name
+export type RenderingOptions = {
+  renderMode: RenderMode;
+  profiling?: {
+    onRendererStatsUpdated: (
+      rendererId: string,
+      renderingStats: RenderingStats
+    ) => void;
+  };
+};
 export class RendererCollection<TPayload> {
   controllers: RendererController<TPayload>[] = [];
-  renderSchedulerFactory: () => RenderScheduler;
+  renderSchedulerFactory: (rendererId: string) => RenderScheduler;
 
   constructor(
-    options: {
-      renderMode: "onDemand" | "continuous";
-      performanceMonitor?: IRenderingPerformanceMonitor;
-    },
-    private workerFactory?: (id: string) => Worker
+    private options: RenderingOptions,
+    private workerFactory?: (rendererId: string) => Worker
   ) {
-    this.renderSchedulerFactory = () => {
-      const renderScheduler =
-        options.renderMode === "continuous"
-          ? createContinuousRenderScheduler()
-          : createOnDemandRAFRenderScheduler();
+    this.renderSchedulerFactory = (rendererId: string) => {
+      const renderScheduler = createRenderSchedulerForMode(options.renderMode);
 
-      return options.performanceMonitor
-        ? enhanceWithProfiler(renderScheduler, options.performanceMonitor)
+      return options.profiling
+        ? enhanceWithProfiler(
+            renderScheduler,
+            new RenderingPerformanceMonitor(renderingStats =>
+              options.profiling?.onRendererStatsUpdated(
+                rendererId,
+                renderingStats
+              )
+            )
+          )
         : renderScheduler;
     };
   }
 
   addRenderer<TRendererPayload, TParams extends any[]>(
-    id: string,
+    rendererId: string,
     contructorFunction: {
       new (
         renderScheduler: RenderScheduler,
@@ -52,9 +62,9 @@ export class RendererCollection<TPayload> {
     enabled: boolean
   ) {
     const controller = {
-      id,
+      id: rendererId,
       renderer: new contructorFunction(
-        this.renderSchedulerFactory(),
+        this.renderSchedulerFactory(rendererId),
         ...contructorParams
       ),
       payloadSelector,
@@ -65,14 +75,14 @@ export class RendererCollection<TPayload> {
   }
 
   addOffscreenRenderer<TRendererPayload, TParams extends any[]>(
-    name: string,
+    rendererId: string,
     contructorFunction: ProxyRenderer<TRendererPayload, TParams>,
     contructorParams: [HTMLCanvasElement, ...Serializable<TParams>],
     payloadSelector: (payload: TPayload) => TRendererPayload,
     enabled: boolean
   ) {
     const controller = {
-      id: name,
+      id: rendererId,
       renderer: tryCreateProxy(
         () => {
           if (!this.workerFactory) {
@@ -80,10 +90,19 @@ export class RendererCollection<TPayload> {
               "You need to provide workerFactory if you want to use offscreen renderers"
             );
           }
-          return this.workerFactory(name);
+          return this.workerFactory(rendererId);
         },
         {
-          enablePerformanceMonitor: true,
+          renderMode: this.options.renderMode,
+          profiling: this.options.profiling
+            ? {
+                onRendererStatsUpdated: (renderingStats: RenderingStats) =>
+                  this.options.profiling?.onRendererStatsUpdated(
+                    rendererId,
+                    renderingStats
+                  ),
+              }
+            : undefined,
         },
         contructorFunction,
         contructorParams

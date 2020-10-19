@@ -3,11 +3,6 @@ export type RenderingStats = {
   averageFrameTime: number;
 };
 
-export interface IRenderingPerformanceMonitor {
-  start(): void;
-  end(): void;
-}
-
 export class RenderingPerformanceMonitor {
   beginTime = 0;
   frames = 0;

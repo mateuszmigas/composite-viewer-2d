@@ -1,4 +1,5 @@
-import { IRenderingPerformanceMonitor } from "./RenderingPerformanceMonitor";
+import { RenderMode } from "./../types/common";
+import { RenderingPerformanceMonitor } from "./RenderingPerformanceMonitor";
 
 export type RenderScheduler = (renderCallback: () => void) => void;
 
@@ -25,10 +26,15 @@ export const createOnDemandImmediateRenderScheduler = (): RenderScheduler => (
 
 export const enhanceWithProfiler = (
   scheduler: RenderScheduler,
-  performanceMonitor: IRenderingPerformanceMonitor
+  performanceMonitor: RenderingPerformanceMonitor
 ): RenderScheduler => (renderCallback: () => void) =>
   scheduler(() => {
     performanceMonitor?.start();
     renderCallback();
     performanceMonitor?.end();
   });
+
+export const createRenderSchedulerForMode = (renderMode: RenderMode) =>
+  renderMode === "continuous"
+    ? createContinuousRenderScheduler()
+    : createOnDemandRAFRenderScheduler();

@@ -67,7 +67,17 @@ export class Viewer2DHost extends React.PureComponent<
     );
 
     const rendererCollection = new RendererCollection<MyRenderPayload>(
-      { renderMode: "continuous" },
+      {
+        renderMode: "onDemand",
+        profiling: {
+          onRendererStatsUpdated: (rendererId, renderingStats) =>
+            console.log(
+              `renderer: ${rendererId}, stats: ${JSON.stringify(
+                renderingStats
+              )}`
+            ),
+        },
+      },
       createCanvasWorker
     );
     rendererCollection.addRenderer(
