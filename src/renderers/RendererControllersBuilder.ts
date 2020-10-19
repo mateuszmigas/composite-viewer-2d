@@ -1,3 +1,8 @@
+import {
+  IRenderingPerformanceMonitor,
+  RenderingPerformanceMonitor,
+  RenderingStats,
+} from "./RenderingPerformanceMonitor";
 import { tryCreateProxy } from "./WebWorkerRendererProxy";
 import { Serializable } from "../types/common";
 import { ProxyRenderer } from "../types/proxy";
@@ -6,9 +11,11 @@ import { GenericRender } from "./Renderer";
 import {
   createContinuousRenderScheduler,
   createOnDemandRAFRenderScheduler,
+  enhanceWithProfiler,
   RenderScheduler,
 } from "./RenderScheduler";
 
+//todo, different name
 export class RendererCollection<TPayload> {
   controllers: RendererController<TPayload>[] = [];
   renderSchedulerFactory: () => RenderScheduler;
@@ -16,21 +23,24 @@ export class RendererCollection<TPayload> {
   constructor(
     options: {
       renderMode: "onDemand" | "continuous";
-      enableProfiling?: boolean;
+      performanceMonitor?: IRenderingPerformanceMonitor;
     },
     private workerFactory?: (id: string) => Worker
   ) {
-    // const pm = options.enableProfiling
-    //   ? new RenderingPerformanceMonitor()
-    //   : undefined;
-    this.renderSchedulerFactory =
-      options.renderMode === "continuous"
-        ? () => createContinuousRenderScheduler()
-        : () => createOnDemandRAFRenderScheduler();
+    this.renderSchedulerFactory = () => {
+      const renderScheduler =
+        options.renderMode === "continuous"
+          ? createContinuousRenderScheduler()
+          : createOnDemandRAFRenderScheduler();
+
+      return options.performanceMonitor
+        ? enhanceWithProfiler(renderScheduler, options.performanceMonitor)
+        : renderScheduler;
+    };
   }
 
   addRenderer<TRendererPayload, TParams extends any[]>(
-    name: string,
+    id: string,
     contructorFunction: {
       new (
         renderScheduler: RenderScheduler,
@@ -42,7 +52,7 @@ export class RendererCollection<TPayload> {
     enabled: boolean
   ) {
     const controller = {
-      id: name,
+      id,
       renderer: new contructorFunction(
         this.renderSchedulerFactory(),
         ...contructorParams

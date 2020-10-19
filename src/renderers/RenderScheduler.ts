@@ -2,32 +2,15 @@ import { IRenderingPerformanceMonitor } from "./RenderingPerformanceMonitor";
 
 export type RenderScheduler = (renderCallback: () => void) => void;
 
-export const createOnDemandRAFRenderScheduler = (
-  performanceMonitor?: IRenderingPerformanceMonitor
-): RenderScheduler => {
-  if (performanceMonitor) {
-    return (renderCallback: () => void) => {
-      requestAnimationFrame(() => {
-        performanceMonitor.start();
-        renderCallback();
-        performanceMonitor.end();
-      });
-    };
-  } else {
-    return (renderCallback: () => void) =>
-      requestAnimationFrame(renderCallback);
-  }
-};
+export const createOnDemandRAFRenderScheduler = (): RenderScheduler => (
+  renderCallback: () => void
+) => requestAnimationFrame(renderCallback);
 
-export const createContinuousRenderScheduler = (
-  performanceMonitor?: IRenderingPerformanceMonitor
-): RenderScheduler => {
+export const createContinuousRenderScheduler = (): RenderScheduler => {
   let callback: () => void;
 
-  function renderLoop(time: number) {
-    performanceMonitor?.start();
-    callback();
-    performanceMonitor?.end();
+  function renderLoop() {
+    callback?.();
     requestAnimationFrame(renderLoop);
   }
 
@@ -39,3 +22,13 @@ export const createContinuousRenderScheduler = (
 export const createOnDemandImmediateRenderScheduler = (): RenderScheduler => (
   renderCallback: () => void
 ) => renderCallback();
+
+export const enhanceWithProfiler = (
+  scheduler: RenderScheduler,
+  performanceMonitor: IRenderingPerformanceMonitor
+): RenderScheduler => (renderCallback: () => void) =>
+  scheduler(() => {
+    performanceMonitor?.start();
+    renderCallback();
+    performanceMonitor?.end();
+  });

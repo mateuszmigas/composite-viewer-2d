@@ -1,8 +1,3 @@
-import { Size } from "./geometry";
-import { Viewport } from "./viewport";
-
-export type RenderMode = "onDemand" | "continuous";
-
 export type Unsubscribe = () => void;
 
 export type Serializable<T> = T extends string | number | boolean | null

@@ -1,4 +1,3 @@
-import { RenderMode } from "./../types/common";
 import Stats from "stats.js";
 import { RendererController } from "../renderers/RendererController";
 
@@ -8,7 +7,7 @@ export class DebugInfo {
   constructor(
     hostElement: HTMLElement,
     renderers: RendererController<any>[],
-    options: { renderMode: RenderMode }
+    options: {}
   ) {
     this.stats.showPanel(0);
     this.stats.dom.style.position = "absolute";
@@ -26,7 +25,7 @@ export class DebugInfo {
 
 const createPanel = (
   renderers: RendererController<any>[],
-  options: { renderMode: RenderMode }
+  options: {}
 ): HTMLElement => {
   const div = document.createElement("div");
   div.style.color = "white";
@@ -54,19 +53,19 @@ const createPanel = (
     div.appendChild(document.createElement("br"));
   });
 
-  div.appendChild(document.createElement("br"));
-  const input = document.createElement("input");
-  input.type = "checkbox";
-  input.checked = options.renderMode === "onDemand";
-  input.id = "renderMode";
-  input.onchange = () => {
-    options.renderMode = input.checked ? "onDemand" : "continuous";
-  };
+  // div.appendChild(document.createElement("br"));
+  // const input = document.createElement("input");
+  // input.type = "checkbox";
+  // input.checked = options.renderMode === "onDemand";
+  // input.id = "renderMode";
+  // input.onchange = () => {
+  //   options.renderMode = input.checked ? "onDemand" : "continuous";
+  // };
 
   const label = document.createElement("label");
   label.htmlFor = "renderMode";
   label.textContent = "on demand";
-  div.appendChild(input);
+  //div.appendChild(input);
   div.appendChild(label);
 
   return div;

@@ -7,6 +7,7 @@ import { assertNever } from "./../utils/typeHelpers";
 import { Renderer } from "./Renderer";
 import {
   createOnDemandRAFRenderScheduler,
+  enhanceWithProfiler,
   RenderScheduler,
 } from "./RenderScheduler";
 import { Canvas2DSimpleRenderer } from "./Canvas2DSimpleRenderer";
@@ -248,16 +249,19 @@ export const exposeToProxy = (
           ] = proxyEvent.messageData;
 
           const rendererConstructor = getRendererConstructor(rendererType);
+          const rafScheduler = createOnDemandRAFRenderScheduler();
+
           const renderScheduler = proxyOptions.enablePerformanceMonitor
-            ? createOnDemandRAFRenderScheduler(
-                new RenderingPerformanceMonitor((stats: RenderingStats) =>
+            ? enhanceWithProfiler(
+                rafScheduler,
+                new RenderingPerformanceMonitor(stats =>
                   postWorkerMessage({
                     messageType: "renderingStats",
                     messageData: stats,
                   })
                 )
               )
-            : createOnDemandRAFRenderScheduler();
+            : rafScheduler;
 
           renderer = new rendererConstructor(
             renderScheduler,

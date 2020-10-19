@@ -8,6 +8,7 @@ import {
   ViewportManipulator,
   createCanvasElement,
   RendererCollection,
+  Unsubscribe,
 } from "./viewer2d";
 
 interface Viewer2DHostProps {}
@@ -66,7 +67,7 @@ export class Viewer2DHost extends React.PureComponent<
     );
 
     const rendererCollection = new RendererCollection<MyRenderPayload>(
-      { renderMode: "onDemand" },
+      { renderMode: "continuous" },
       createCanvasWorker
     );
     rendererCollection.addRenderer(
