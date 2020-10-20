@@ -1,26 +1,16 @@
-import Stats from "stats.js";
 import { RendererController } from "../renderers/RendererController";
 
 export class DebugInfo {
-  private stats = new Stats();
-
   constructor(
     hostElement: HTMLElement,
     renderers: RendererController<any>[],
     options: {}
   ) {
-    this.stats.showPanel(0);
-    this.stats.dom.style.position = "absolute";
-    hostElement.appendChild(this.stats.dom);
     const panel = createPanel(renderers, options);
     hostElement.appendChild(panel);
   }
-  onLoopBegin() {
-    this.stats.begin();
-  }
-  onLoopEnd() {
-    this.stats.end();
-  }
+  onLoopBegin() {}
+  onLoopEnd() {}
 }
 
 const createPanel = (

@@ -1,4 +1,3 @@
-import { RenderingOptions } from "./RendererControllersBuilder";
 import {
   RenderingPerformanceMonitor,
   RenderingStats,

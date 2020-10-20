@@ -7,7 +7,7 @@ import {
   Viewport,
   ViewportManipulator,
   createCanvasElement,
-  RendererCollection,
+  RendererControllerFactory,
   Unsubscribe,
 } from "./viewer2d";
 
@@ -32,7 +32,7 @@ const randomColor = (): Color => {
 const createCanvasWorker = (name: string) =>
   new Worker("./renderWorker.template.ts", {
     type: "module",
-    name: name,
+    name: `${name}.Renderer2D`,
   });
 
 export class Viewer2DHost extends React.PureComponent<
@@ -66,7 +66,7 @@ export class Viewer2DHost extends React.PureComponent<
       (newViewport: Viewport) => this.renderDispatcher.setViewport(newViewport)
     );
 
-    const rendererCollection = new RendererCollection<MyRenderPayload>(
+    const factory = new RendererControllerFactory<MyRenderPayload>(
       {
         renderMode: "onDemand",
         profiling: {
@@ -80,31 +80,31 @@ export class Viewer2DHost extends React.PureComponent<
       },
       createCanvasWorker
     );
-    rendererCollection.addRenderer(
-      "cycki1",
-      Canvas2DSimpleRenderer,
-      [this.createCanvas(101)],
-      (payload: MyRenderPayload) => ({
-        rectangles: payload.someRectangles1,
-      }),
-      true
-    );
-    rendererCollection.addOffscreenRenderer(
-      "cycki2",
-      Canvas2DSimpleRenderer,
-      [this.createCanvas(102)],
-      (payload: MyRenderPayload) => ({
-        rectangles: payload.someRectangles2,
-      }),
-      true
-    );
 
-    //for debug only
-    //displayControllerPanel
+    const rendererControllers = [
+      factory.create(
+        "cycki1",
+        Canvas2DSimpleRenderer,
+        [this.createCanvas(101)],
+        payload => ({
+          rectangles: payload.someRectangles1,
+        }),
+        true
+      ),
+      factory.createOffscreen(
+        "cycki2",
+        Canvas2DSimpleRenderer,
+        [this.createCanvas(102)],
+        payload => ({
+          rectangles: payload.someRectangles2,
+        }),
+        true
+      ),
+    ];
 
     this.renderDispatcher = new RenderDispatcher(
       this.hostElement.current,
-      rendererCollection.getRenderers(),
+      rendererControllers,
       this.fullRender
     );
 

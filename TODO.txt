@@ -21,3 +21,8 @@ done:
 ideas:
 - each schedule render needs to invoke requestAnimationFrame otherwise
 it gets desynchronized (ww and mt)
+
+goals: 
+- zero (little) dependency
+- hack free
+- 99% strongly typed

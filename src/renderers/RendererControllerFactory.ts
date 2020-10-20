@@ -1,4 +1,4 @@
-import { RenderMode } from "./../types/common";
+import { RenderMode } from "../types/common";
 import {
   RenderingPerformanceMonitor,
   RenderingStats,
@@ -14,22 +14,19 @@ import {
   RenderScheduler,
 } from "./RenderScheduler";
 
-//todo, different name
-export type RenderingOptions = {
-  renderMode: RenderMode;
-  profiling?: {
-    onRendererStatsUpdated: (
-      rendererId: string,
-      renderingStats: RenderingStats
-    ) => void;
-  };
-};
-export class RendererCollection<TPayload> {
-  controllers: RendererController<TPayload>[] = [];
+export class RendererControllerFactory<TPayload> {
   renderSchedulerFactory: (rendererId: string) => RenderScheduler;
 
   constructor(
-    private options: RenderingOptions,
+    private options: {
+      renderMode: RenderMode;
+      profiling?: {
+        onRendererStatsUpdated: (
+          rendererId: string,
+          renderingStats: RenderingStats
+        ) => void;
+      };
+    },
     private workerFactory?: (rendererId: string) => Worker
   ) {
     this.renderSchedulerFactory = (rendererId: string) => {
@@ -49,7 +46,7 @@ export class RendererCollection<TPayload> {
     };
   }
 
-  addRenderer<TRendererPayload, TParams extends any[]>(
+  create<TRendererPayload, TParams extends any[]>(
     rendererId: string,
     contructorFunction: {
       new (
@@ -60,7 +57,7 @@ export class RendererCollection<TPayload> {
     contructorParams: TParams,
     payloadSelector: (payload: TPayload) => TRendererPayload,
     enabled: boolean
-  ) {
+  ): RendererController<TPayload> {
     const controller = {
       id: rendererId,
       renderer: new contructorFunction(
@@ -71,16 +68,17 @@ export class RendererCollection<TPayload> {
       enabled,
     };
 
-    this.prepareAndAddController(controller);
+    controller.renderer.setVisibility(controller.enabled);
+    return controller;
   }
 
-  addOffscreenRenderer<TRendererPayload, TParams extends any[]>(
+  createOffscreen<TRendererPayload, TParams extends any[]>(
     rendererId: string,
     contructorFunction: ProxyRenderer<TRendererPayload, TParams>,
     contructorParams: [HTMLCanvasElement, ...Serializable<TParams>],
     payloadSelector: (payload: TPayload) => TRendererPayload,
     enabled: boolean
-  ) {
+  ): RendererController<TPayload> {
     const controller = {
       id: rendererId,
       renderer: tryCreateProxy(
@@ -111,15 +109,7 @@ export class RendererCollection<TPayload> {
       enabled,
     };
 
-    this.prepareAndAddController(controller);
-  }
-
-  getRenderers(): RendererController<TPayload>[] {
-    return this.controllers;
-  }
-
-  private prepareAndAddController(controller: RendererController<TPayload>) {
     controller.renderer.setVisibility(controller.enabled);
-    this.controllers.push(controller);
+    return controller;
   }
 }
