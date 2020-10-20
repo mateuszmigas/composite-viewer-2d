@@ -130,8 +130,8 @@ export class Viewer2DHost extends React.PureComponent<
       //     color: randomColor(),
       //   },
       // ],
-      someRectangles1: generateRandomRectangles(1000),
-      someRectangles2: generateRandomRectangles(1000),
+      someRectangles1: generateRandomRectangles(12000),
+      someRectangles2: generateRandomRectangles(12000),
       // someRectangles2: [
       //   {
       //     type: "Rectangle",

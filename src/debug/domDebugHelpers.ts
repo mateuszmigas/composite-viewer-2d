@@ -114,8 +114,41 @@ const createPanel = (
       r.renderer.setVisibility(r.enabled);
     };
     divFrames.appendChild(input);
-
     divMain.appendChild(divFrames);
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 200;
+    canvas.height = 40;
+    const ctx = canvas.getContext("2d");
+    let frames: number[] = [];
+
+    stats.attach(x => {
+      if (x.rendererId === r.id) {
+        if (ctx === null) return;
+        frames.push(x.renderingStats.averageFrameTime);
+        if (frames.length > 50) {
+          frames.shift();
+        }
+        ctx.clearRect(0, 0, 40, 200);
+        frames.forEach((f, i) => {
+          if (f > 16)
+            ctx.fillStyle = `rgb(
+            255,
+            0,
+            0)`;
+          else {
+            ctx.fillStyle = `rgb(
+                0,
+                255,
+                0)`;
+          }
+
+          ctx.fillRect(i * 4, 40 - 2 * f, 4, 2 * f);
+        });
+      }
+    });
+
+    divMain.appendChild(canvas);
 
     div.appendChild(divMain);
   });
