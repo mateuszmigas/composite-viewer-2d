@@ -1,4 +1,5 @@
 import React from "react";
+import { generateRandomRectangles } from "./helpers";
 import {
   Canvas2DSimpleRenderer,
   Color,
@@ -9,6 +10,7 @@ import {
   createCanvasElement,
   RendererControllerFactory,
   Unsubscribe,
+  PerformanceMonitorPanel,
 } from "./viewer2d";
 
 interface Viewer2DHostProps {}
@@ -66,16 +68,14 @@ export class Viewer2DHost extends React.PureComponent<
       (newViewport: Viewport) => this.renderDispatcher.setViewport(newViewport)
     );
 
+    const performancePanel = new PerformanceMonitorPanel();
+    this.hostElement.current.appendChild(performancePanel.getElement());
+
     const factory = new RendererControllerFactory<MyRenderPayload>(
       {
         renderMode: "onDemand",
         profiling: {
-          onRendererStatsUpdated: (rendererId, renderingStats) =>
-            console.log(
-              `renderer: ${rendererId}, stats: ${JSON.stringify(
-                renderingStats
-              )}`
-            ),
+          onRendererStatsUpdated: performancePanel.updateStats,
         },
       },
       createCanvasWorker
@@ -83,7 +83,7 @@ export class Viewer2DHost extends React.PureComponent<
 
     const rendererControllers = [
       factory.create(
-        "cycki1",
+        "Canvas 2D main thread",
         Canvas2DSimpleRenderer,
         [this.createCanvas(101)],
         payload => ({
@@ -92,7 +92,7 @@ export class Viewer2DHost extends React.PureComponent<
         true
       ),
       factory.createOffscreen(
-        "cycki2",
+        "Canvas 2D web worker",
         Canvas2DSimpleRenderer,
         [this.createCanvas(102)],
         payload => ({
@@ -101,6 +101,7 @@ export class Viewer2DHost extends React.PureComponent<
         true
       ),
     ];
+    performancePanel.attachRendererControllers(rendererControllers);
 
     this.renderDispatcher = new RenderDispatcher(
       this.hostElement.current,
@@ -118,29 +119,30 @@ export class Viewer2DHost extends React.PureComponent<
 
   private fullRender = () => {
     this.renderDispatcher.render({
-      someRectangles1: [
-        {
-          type: "Rectangle",
-          containerId: "1",
-          x: 100,
-          y: 10,
-          width: 50,
-          height: 80,
-          color: randomColor(),
-        },
-      ],
-      // someRectangles1: generateRandomRectangles(100),
-      someRectangles2: [
-        {
-          type: "Rectangle",
-          containerId: "1",
-          x: 110,
-          y: 20,
-          width: 50,
-          height: 80,
-          color: randomColor(),
-        },
-      ],
+      // someRectangles1: [
+      //   {
+      //     type: "Rectangle",
+      //     containerId: "1",
+      //     x: 100,
+      //     y: 10,
+      //     width: 50,
+      //     height: 80,
+      //     color: randomColor(),
+      //   },
+      // ],
+      someRectangles1: generateRandomRectangles(1000),
+      someRectangles2: generateRandomRectangles(1000),
+      // someRectangles2: [
+      //   {
+      //     type: "Rectangle",
+      //     containerId: "1",
+      //     x: 110,
+      //     y: 20,
+      //     width: 50,
+      //     height: 80,
+      //     color: randomColor(),
+      //   },
+      // ],
     });
   };
 

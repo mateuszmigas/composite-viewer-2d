@@ -6,15 +6,6 @@ import { Viewport } from "../types/viewport";
 import { GenericRender, Renderer } from "./Renderer";
 import { RenderScheduler } from "./RenderScheduler";
 
-//sheetSize
-//scene2d, worldSize:x,y, viewSize, viewport { zoom, offset }
-//scene3d, worldSize:x,y,z viewSize, camera: any
-//SceneRenderer2D
-//SceneRenderer3D
-
-//viewport { size, zoom, offset } View2D View3S
-//viewerCanvas 3000x2000\
-
 type RenderPayload = {
   rectangles: RenderRectangleObject[];
   circles: RenderCircleObject[];

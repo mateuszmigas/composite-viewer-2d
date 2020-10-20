@@ -13,7 +13,7 @@ body,
   grid-template-areas:
     "title viewer"
     "tools viewer";
-  grid-template-columns: 350px auto;
+  grid-template-columns: 50px auto;
   grid-template-rows: 50px auto;
 }
 

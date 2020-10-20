@@ -34,6 +34,10 @@ type RenderProxyBackEvent = {
   messageType: "renderingStats";
   messageData: RenderingStats;
 };
+type RenderProxyBackEventListener = {
+  messageType: "renderingStats";
+  messageCallback: (stats: RenderingStats) => void;
+};
 type RenderProxyEvent =
   | {
       messageType: "createRenderer";
@@ -158,20 +162,16 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
     else this.worker.postMessage(event);
   }
 
-  private listenToMessage(listener: {
-    messageType: "renderingStats";
-    messageCallback: (stats: RenderingStats) => void;
-  }) {
+  private listenToMessage(listener: RenderProxyBackEventListener) {
     const { messageType, messageCallback } = listener;
-    this.worker.onmessage = ({
-      data: proxyEvent,
-    }: {
-      data: RenderProxyBackEvent;
-    }) => {
-      if (proxyEvent.messageType === messageType) {
-        messageCallback(proxyEvent.messageData);
+    this.worker.addEventListener(
+      "message",
+      ({ data: proxyEvent }: { data: RenderProxyBackEvent }) => {
+        if (proxyEvent.messageType === messageType) {
+          messageCallback(proxyEvent.messageData);
+        }
       }
-    };
+    );
   }
 
   private listenToCallbackMessage(listener: RenderProxyReturnEventListener) {
