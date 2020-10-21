@@ -73,7 +73,7 @@ export class Viewer2DHost extends React.PureComponent<
 
     const factory = new RendererControllerFactory<MyRenderPayload>(
       {
-        renderMode: "onDemand",
+        renderMode: "continuous",
         profiling: {
           onRendererStatsUpdated: performancePanel.updateStats,
         },
@@ -130,8 +130,8 @@ export class Viewer2DHost extends React.PureComponent<
       //     color: randomColor(),
       //   },
       // ],
-      someRectangles1: generateRandomRectangles(12000),
-      someRectangles2: generateRandomRectangles(12000),
+      someRectangles1: generateRandomRectangles(6000),
+      someRectangles2: generateRandomRectangles(6000),
       // someRectangles2: [
       //   {
       //     type: "Rectangle",

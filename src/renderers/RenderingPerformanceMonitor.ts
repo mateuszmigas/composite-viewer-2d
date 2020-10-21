@@ -21,7 +21,7 @@ export class RenderingPerformanceMonitor {
     this.maxFrameTime = Math.max(this.maxFrameTime, timeElapsed);
     this.frames++;
 
-    if (this.frames > 100) {
+    if (this.frames > 60) {
       const stats = {
         maxFrameTime: this.maxFrameTime,
         averageFrameTime: this.totalRenderTime / this.frames,

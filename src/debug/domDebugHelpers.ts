@@ -43,6 +43,16 @@ export class PerformanceMonitorPanel {
   }
 }
 
+const getFrameColor = (duration: number) => {
+  if (duration > 16) {
+    return "red";
+  } else if (duration > 10) {
+    return "orange";
+  } else {
+    return "green";
+  }
+};
+
 const createPanel = (
   renderers: RendererController<any>[],
   stats: Observable<{
@@ -80,11 +90,7 @@ const createPanel = (
           2
         )}ms`;
 
-        if (x.renderingStats.maxFrameTime > 16) {
-          maxFrame.style.color = "red";
-        } else {
-          maxFrame.style.color = "green";
-        }
+        maxFrame.style.color = getFrameColor(x.renderingStats.maxFrameTime);
       }
     });
     divFrames.appendChild(maxFrame);
@@ -97,11 +103,7 @@ const createPanel = (
           2
         )}ms`;
 
-        if (x.renderingStats.averageFrameTime > 16) {
-          avgFrame.style.color = "red";
-        } else {
-          avgFrame.style.color = "green";
-        }
+        avgFrame.style.color = getFrameColor(x.renderingStats.averageFrameTime);
       }
     });
     divFrames.appendChild(avgFrame);
@@ -116,37 +118,7 @@ const createPanel = (
     divFrames.appendChild(input);
     divMain.appendChild(divFrames);
 
-    const canvas = document.createElement("canvas");
-    canvas.width = 200;
-    canvas.height = 40;
-    const ctx = canvas.getContext("2d");
-    let frames: number[] = [];
-
-    stats.attach(x => {
-      if (x.rendererId === r.id) {
-        if (ctx === null) return;
-        frames.push(x.renderingStats.averageFrameTime);
-        if (frames.length > 50) {
-          frames.shift();
-        }
-        ctx.clearRect(0, 0, 40, 200);
-        frames.forEach((f, i) => {
-          if (f > 16)
-            ctx.fillStyle = `rgb(
-            255,
-            0,
-            0)`;
-          else {
-            ctx.fillStyle = `rgb(
-                0,
-                255,
-                0)`;
-          }
-
-          ctx.fillRect(i * 4, 40 - 2 * f, 4, 2 * f);
-        });
-      }
-    });
+    const canvas = createCanvasPanel(stats, r);
 
     divMain.appendChild(canvas);
 
@@ -155,3 +127,45 @@ const createPanel = (
 
   return div;
 };
+
+function createCanvasPanel(
+  stats: Observable<{ rendererId: string; renderingStats: RenderingStats }>,
+  renderer: RendererController<any>
+) {
+  const width = 240;
+  const height = 40;
+  const oneFrameWidth = 4;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  const bg = "blue";
+  if (ctx) {
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, width, height);
+  }
+
+  stats.attach(x => {
+    if (x.rendererId === renderer.id) {
+      if (ctx === null) return;
+      const f = x.renderingStats.averageFrameTime;
+      ctx.drawImage(
+        canvas,
+        0,
+        0,
+        width - oneFrameWidth,
+        height,
+        oneFrameWidth,
+        0,
+        width - oneFrameWidth,
+        height
+      );
+
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, oneFrameWidth, height);
+      ctx.fillStyle = getFrameColor(f);
+      ctx.fillRect(0, height - 2 * f, oneFrameWidth, 2 * f);
+    }
+  });
+  return canvas;
+}
