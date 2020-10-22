@@ -1,10 +1,8 @@
 todo:
-- monitors for new solution
 - treejs plugin
 - pixijs plugin
 - react plugin
 - check if ww terminate is not called before dispose
-- move render mode and profiling to render scheduler
 - render params in schedule renderer
 - full render/patch render
 - make file casing consistent
@@ -18,7 +16,7 @@ profiling:
 done:
 - make sure there is single render at start
 
-ideas:
+remember:
 - each schedule render needs to invoke requestAnimationFrame otherwise
 it gets desynchronized (ww and mt)
 
