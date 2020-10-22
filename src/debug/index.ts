@@ -1,1 +1,1 @@
-export * from "./domDebugHelpers";
+export * from "./performanceMonitorPanel";

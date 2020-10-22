@@ -1,8 +1,10 @@
 import { Renderer } from "./Renderer";
+import { RendererExecutionEnvironment } from "./RendererExecutionEnvironment";
 
 export type RendererController<TPayload> = {
-  id: string;
-  renderer: Renderer;
+  readonly id: string;
+  readonly renderer: Renderer;
+  readonly executionEnvironment: RendererExecutionEnvironment;
   payloadSelector: (payload: TPayload) => unknown;
   enabled: boolean;
 };

@@ -83,7 +83,7 @@ export class Viewer2DHost extends React.PureComponent<
 
     const rendererControllers = [
       factory.create(
-        "Canvas 2D main thread",
+        "Canvas_2D_1",
         Canvas2DSimpleRenderer,
         [this.createCanvas(101)],
         payload => ({
@@ -92,7 +92,7 @@ export class Viewer2DHost extends React.PureComponent<
         true
       ),
       factory.createOffscreen(
-        "Canvas 2D web worker",
+        "Canvas_2D_2",
         Canvas2DSimpleRenderer,
         [this.createCanvas(102)],
         payload => ({
@@ -101,7 +101,7 @@ export class Viewer2DHost extends React.PureComponent<
         true
       ),
     ];
-    performancePanel.attachRendererControllers(rendererControllers);
+    performancePanel.addRenderers(rendererControllers);
 
     this.renderDispatcher = new RenderDispatcher(
       this.hostElement.current,

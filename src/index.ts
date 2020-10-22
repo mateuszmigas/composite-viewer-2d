@@ -1,3 +1,4 @@
+import "./extensions/array";
 export * from "./renderers";
 export * from "./types";
 export * from "./manipulation";

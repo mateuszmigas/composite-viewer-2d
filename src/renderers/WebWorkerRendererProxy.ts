@@ -20,6 +20,7 @@ import {
   ProxyReturnEventListener,
   ProxyRenderer,
 } from "../types/proxy";
+import { RendererExecutionEnvironment } from "./RendererExecutionEnvironment";
 
 type WebWorkerCompatibleRenderer = ProxyRenderer<any, any>;
 type ProxyOptions = {
@@ -196,14 +197,20 @@ export const tryCreateProxy = <TRendererPayload, TParams extends any[]>(
   options: ProxyOptions,
   rendererConstructor: ProxyRenderer<TRendererPayload, TParams>,
   rendererParams: [HTMLCanvasElement, ...Serializable<TParams>]
-) => {
+): {
+  renderer: Renderer;
+  executionEnvironment: RendererExecutionEnvironment;
+} => {
   if (isOffscreenCanvasSupported()) {
-    return new WebWorkerRendererProxy(
-      workerFactory,
-      options,
-      rendererConstructor,
-      rendererParams
-    );
+    return {
+      renderer: new WebWorkerRendererProxy(
+        workerFactory,
+        options,
+        rendererConstructor,
+        rendererParams
+      ),
+      executionEnvironment: "webWorker",
+    };
   } else {
     const renderScheduler = createRenderSchedulerForMode(options.renderMode);
     const enhancedRenderScheduler = options.profiling
@@ -215,7 +222,13 @@ export const tryCreateProxy = <TRendererPayload, TParams extends any[]>(
         )
       : renderScheduler;
 
-    return new rendererConstructor(enhancedRenderScheduler, ...rendererParams);
+    return {
+      renderer: new rendererConstructor(
+        enhancedRenderScheduler,
+        ...rendererParams
+      ),
+      executionEnvironment: "mainThread",
+    };
   }
 };
 

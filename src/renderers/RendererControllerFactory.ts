@@ -47,7 +47,7 @@ export class RendererControllerFactory<TPayload> {
   }
 
   create<TRendererPayload, TParams extends any[]>(
-    rendererId: string,
+    id: string,
     contructorFunction: {
       new (
         renderScheduler: RenderScheduler,
@@ -58,14 +58,15 @@ export class RendererControllerFactory<TPayload> {
     payloadSelector: (payload: TPayload) => TRendererPayload,
     enabled: boolean
   ): RendererController<TPayload> {
-    const controller = {
-      id: rendererId,
+    const controller: RendererController<TPayload> = {
+      id,
       renderer: new contructorFunction(
-        this.renderSchedulerFactory(rendererId),
+        this.renderSchedulerFactory(id),
         ...contructorParams
       ),
       payloadSelector,
       enabled,
+      executionEnvironment: "mainThread",
     };
 
     controller.renderer.setVisibility(controller.enabled);
@@ -73,40 +74,43 @@ export class RendererControllerFactory<TPayload> {
   }
 
   createOffscreen<TRendererPayload, TParams extends any[]>(
-    rendererId: string,
+    id: string,
     contructorFunction: ProxyRenderer<TRendererPayload, TParams>,
     contructorParams: [HTMLCanvasElement, ...Serializable<TParams>],
     payloadSelector: (payload: TPayload) => TRendererPayload,
     enabled: boolean
   ): RendererController<TPayload> {
-    const controller = {
-      id: rendererId,
-      renderer: tryCreateProxy(
-        () => {
-          if (!this.workerFactory) {
-            throw new Error(
-              "You need to provide workerFactory if you want to use offscreen renderers"
-            );
-          }
-          return this.workerFactory(rendererId);
-        },
-        {
-          renderMode: this.options.renderMode,
-          profiling: this.options.profiling
-            ? {
-                onRendererStatsUpdated: (renderingStats: RenderingStats) =>
-                  this.options.profiling?.onRendererStatsUpdated(
-                    rendererId,
-                    renderingStats
-                  ),
-              }
-            : undefined,
-        },
-        contructorFunction,
-        contructorParams
-      ),
+    const { renderer, executionEnvironment } = tryCreateProxy(
+      () => {
+        if (!this.workerFactory) {
+          throw new Error(
+            "You need to provide workerFactory if you want to use offscreen renderers"
+          );
+        }
+        return this.workerFactory(id);
+      },
+      {
+        renderMode: this.options.renderMode,
+        profiling: this.options.profiling
+          ? {
+              onRendererStatsUpdated: (renderingStats: RenderingStats) =>
+                this.options.profiling?.onRendererStatsUpdated(
+                  id,
+                  renderingStats
+                ),
+            }
+          : undefined,
+      },
+      contructorFunction,
+      contructorParams
+    );
+
+    const controller: RendererController<TPayload> = {
+      id,
+      renderer,
       payloadSelector,
       enabled,
+      executionEnvironment,
     };
 
     controller.renderer.setVisibility(controller.enabled);
