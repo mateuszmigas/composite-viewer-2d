@@ -68,14 +68,15 @@ export class Viewer2DHost extends React.PureComponent<
       (newViewport: Viewport) => this.renderDispatcher.setViewport(newViewport)
     );
 
-    const performancePanel = new PerformanceMonitorPanel();
-    this.hostElement.current.appendChild(performancePanel.getElement());
+    //debug opnly
+    const perfMonitorPanel = new PerformanceMonitorPanel();
+    this.hostElement.current.appendChild(perfMonitorPanel.getElement());
 
     const factory = new RendererControllerFactory<MyRenderPayload>(
       {
         renderMode: "continuous",
         profiling: {
-          onRendererStatsUpdated: performancePanel.updateStats,
+          onRendererStatsUpdated: perfMonitorPanel.updateStats,
         },
       },
       createCanvasWorker
@@ -91,17 +92,19 @@ export class Viewer2DHost extends React.PureComponent<
         }),
         true
       ),
-      factory.createOffscreen(
+      factory.createOrchestratedOffscreenIfAvailable(
         "Canvas_2D_2",
         Canvas2DSimpleRenderer,
         [this.createCanvas(102)],
         payload => ({
           rectangles: payload.someRectangles2,
+          circles: [],
         }),
-        true
+        true,
+        { adjustPayloadPolicy: "spreadEvenly" }
       ),
     ];
-    performancePanel.addRenderers(rendererControllers);
+    perfMonitorPanel.addRenderers(rendererControllers);
 
     this.renderDispatcher = new RenderDispatcher(
       this.hostElement.current,

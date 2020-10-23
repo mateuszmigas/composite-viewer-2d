@@ -192,46 +192,6 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
   }
 }
 
-export const tryCreateProxy = <TRendererPayload, TParams extends any[]>(
-  workerFactory: () => Worker,
-  options: ProxyOptions,
-  rendererConstructor: ProxyRenderer<TRendererPayload, TParams>,
-  rendererParams: [HTMLCanvasElement, ...Serializable<TParams>]
-): {
-  renderer: Renderer;
-  executionEnvironment: RendererExecutionEnvironment;
-} => {
-  if (isOffscreenCanvasSupported()) {
-    return {
-      renderer: new WebWorkerRendererProxy(
-        workerFactory,
-        options,
-        rendererConstructor,
-        rendererParams
-      ),
-      executionEnvironment: "webWorker",
-    };
-  } else {
-    const renderScheduler = createRenderSchedulerForMode(options.renderMode);
-    const enhancedRenderScheduler = options.profiling
-      ? enhanceWithProfiler(
-          renderScheduler,
-          new RenderingPerformanceMonitor(renderingStats =>
-            options.profiling?.onRendererStatsUpdated(renderingStats)
-          )
-        )
-      : renderScheduler;
-
-    return {
-      renderer: new rendererConstructor(
-        enhancedRenderScheduler,
-        ...rendererParams
-      ),
-      executionEnvironment: "mainThread",
-    };
-  }
-};
-
 export const exposeToProxy = (
   worker: Worker,
   customRendererConstructors: WebWorkerCompatibleRenderer[]

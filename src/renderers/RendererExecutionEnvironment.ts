@@ -1,1 +1,4 @@
-export type RendererExecutionEnvironment = "mainThread" | "webWorker";
+export type RendererExecutionEnvironment =
+  | "mainThread"
+  | "webWorker"
+  | "orchestratedWebWorkers";
