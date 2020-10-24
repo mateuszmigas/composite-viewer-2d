@@ -18,6 +18,10 @@ export class Observable<T> {
     this.notify();
   }
 
+  getValue() {
+    return this.value;
+  }
+
   private notify() {
     if (this.value !== null) {
       const value = this.value;

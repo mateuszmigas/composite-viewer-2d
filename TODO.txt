@@ -1,4 +1,6 @@
 todo:
+- renderpatch restrictions for orchestrator
+- profiler text in canvas2s
 - treejs plugin
 - pixijs plugin
 - react plugin

@@ -102,8 +102,8 @@ export class Viewer2DHost extends React.PureComponent<
         {
           adjustPayloadPolicy: "spreadEvenly",
           minExecutors: 2,
-          maxExecutors: 8,
-          frequency: 5000,
+          maxExecutors: 5,
+          frequency: 2000,
         },
         true
       ),
@@ -137,8 +137,8 @@ export class Viewer2DHost extends React.PureComponent<
       //     color: randomColor(),
       //   },
       // ],
-      someRectangles1: generateRandomRectangles(1),
-      someRectangles2: generateRandomRectangles(3),
+      someRectangles1: generateRandomRectangles(6000),
+      someRectangles2: generateRandomRectangles(300),
       // someRectangles2: [
       //   {
       //     type: "Rectangle",

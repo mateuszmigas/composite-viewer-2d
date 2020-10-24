@@ -1,4 +1,5 @@
-export type RendererExecutionEnvironment =
-  | "mainThread"
-  | "webWorker"
-  | "orchestratedWebWorkers";
+export type RendererExecutionEnvironment = Readonly<
+  | { type: "mainThread" }
+  | { type: "webWorker" }
+  | { type: "orchestratedWebWorkers"; maxWorkers: number }
+>;

@@ -1,15 +1,21 @@
+import { repeatNTimes } from "./../common/arrayExtensions";
 import { RenderingStats } from "../renderers/RenderingPerformanceMonitor";
 import { RendererController } from "../renderers/RendererController";
 import { Observable } from "../common/observable";
 
+type RendererStats = {
+  rendererId: string;
+  renderingStats: RenderingStats[];
+};
+
 export class PerformanceMonitorPanel {
   hostElement: HTMLDivElement;
   contentElement: HTMLDivElement;
-  statsObservable = new Observable<{
-    rendererId: string;
-    renderingStats: RenderingStats;
-  }>(null);
-  renderersToKeepAlive: { id: string; lastUpdate: number }[] = [];
+  statsObservable = new Observable<RendererStats>(null);
+  observedRendererControllers: {
+    rendererController: RendererController<any>;
+    element: HTMLDivElement;
+  }[] = [];
   isEnabled = true;
 
   constructor() {
@@ -34,34 +40,33 @@ export class PerformanceMonitorPanel {
     return this.hostElement;
   }
 
-  updateStats = (rendererId: string, renderingStats: RenderingStats) => {
+  updateStats = (
+    rendererId: string,
+    renderingStats: RenderingStats | RenderingStats[]
+  ) => {
     if (this.isEnabled) {
-      const now = Date.now();
-      const item = this.renderersToKeepAlive.find(
-        item => item.id === rendererId
-      );
-      if (item) {
-        item.lastUpdate = now;
-      } else {
-        this.renderersToKeepAlive.push({
-          id: rendererId,
-          lastUpdate: now,
-        });
-      }
-
-      this.clearDeadRenderers(now);
-
-      this.statsObservable.setValue({ rendererId, renderingStats });
+      this.statsObservable.setValue({
+        rendererId,
+        renderingStats: Array.isArray(renderingStats)
+          ? renderingStats
+          : [renderingStats],
+      });
     }
   };
 
-  addRenderers(controllers: RendererController<any>[]) {
-    createPanel(controllers, this.statsObservable).forEach(p =>
-      this.contentElement.appendChild(p)
-    );
+  addRenderers(rendererControllers: RendererController<any>[]) {
+    rendererControllers.forEach(rendererController => {
+      const element = createRendererPanel(
+        rendererController,
+        this.statsObservable
+      );
+      this.observedRendererControllers.push({
+        rendererController,
+        element,
+      });
+      this.contentElement.appendChild(element);
+    });
   }
-
-  private clearDeadRenderers(now: number) {}
 }
 
 const getFrameColor = (duration: number) => {
@@ -94,33 +99,69 @@ const createHeaderButton = () => {
   return headerButton;
 };
 
-const createPanel = (
-  renderers: RendererController<any>[],
-  stats: Observable<{
-    rendererId: string;
-    renderingStats: RenderingStats;
-  }>
-) =>
-  renderers.map(renderer => {
-    const divMain = document.createElement("div");
-    divMain.style.margin = "10px";
+const createRendererPanel = (
+  rendererController: RendererController<any>,
+  stats: Observable<RendererStats>
+) => {
+  const divMain = document.createElement("div");
+  divMain.style.padding = "5px";
+  divMain.style.border = "1px solid";
 
-    const idLabel = document.createElement("label");
-    idLabel.textContent = `${renderer.id} - ${renderer.executionEnvironment}`;
-    divMain.appendChild(idLabel);
+  const divHeader = document.createElement("div");
+  divHeader.style.display = "flex";
+  divHeader.style.justifyContent = "space-between";
+  const idLabel = document.createElement("label");
+  idLabel.textContent = `${rendererController.id} - ${rendererController.executionEnvironment.type}`;
+  divHeader.appendChild(idLabel);
+  divHeader.appendChild(createEnableCheckbox(rendererController));
+  divMain.appendChild(divHeader);
+
+  const addStats = (index: number) => {
+    const divOffline = document.createElement("div");
+    divOffline.textContent = "Offline";
+    divOffline.style.color = "red";
+    divOffline.style.visibility = "collapse";
 
     const divFrames = document.createElement("div");
     divFrames.style.display = "flex";
+    divFrames.style.position = "absolute";
     divFrames.style.justifyContent = "space-between";
-    divFrames.appendChild(createMaxFrameLabel(stats, renderer));
-    divFrames.appendChild(createAvgFrameLabel(stats, renderer));
-    divFrames.appendChild(createEnableCheckbox(renderer));
+    divFrames.appendChild(
+      createMaxFrameLabel(stats, rendererController, index)
+    );
+    divFrames.appendChild(
+      createAvgFrameLabel(stats, rendererController, index)
+    );
+
+    stats.attach(x => {
+      if (x.rendererId === rendererController.id) {
+        if (x.renderingStats.length < index + 1) {
+          divOffline.style.visibility = "visible";
+          divFrames.style.visibility = "collapse";
+        } else {
+          divOffline.style.visibility = "collapse";
+          divFrames.style.visibility = "visible";
+        }
+      }
+    });
+
     divMain.appendChild(divFrames);
+    divMain.appendChild(divOffline);
+    divMain.appendChild(createTimelineCanvas(stats, rendererController, index));
+  };
 
-    divMain.appendChild(createTimelineCanvas(stats, renderer));
+  if (
+    rendererController.executionEnvironment.type === "orchestratedWebWorkers"
+  ) {
+    repeatNTimes(rendererController.executionEnvironment.maxWorkers).forEach(
+      addStats
+    );
+  } else {
+    addStats(0);
+  }
 
-    return divMain;
-  });
+  return divMain;
+};
 
 const createEnableCheckbox = (renderer: RendererController<any>) => {
   const enableCheckbox = document.createElement("input");
@@ -135,20 +176,21 @@ const createEnableCheckbox = (renderer: RendererController<any>) => {
 };
 
 const createAvgFrameLabel = (
-  stats: Observable<{ rendererId: string; renderingStats: RenderingStats }>,
-  renderer: RendererController<any>
+  stats: Observable<RendererStats>,
+  rendererController: RendererController<any>,
+  index: number
 ) => {
   const avgFrameLabel = document.createElement("label");
   avgFrameLabel.textContent = "Avg: ?ms";
   avgFrameLabel.style.marginRight = "5px";
   stats.attach(x => {
-    if (x.rendererId === renderer.id) {
-      avgFrameLabel.textContent = `Avg: ${x.renderingStats.averageFrameTime.toFixed(
-        2
-      )}ms`;
+    if (x.rendererId === rendererController.id && x.renderingStats[index]) {
+      avgFrameLabel.textContent = `Avg: ${x.renderingStats[
+        index
+      ].averageFrameTime.toFixed(2)}ms`;
 
       avgFrameLabel.style.color = getFrameColor(
-        x.renderingStats.averageFrameTime
+        x.renderingStats[index].averageFrameTime
       );
     }
   });
@@ -156,27 +198,31 @@ const createAvgFrameLabel = (
 };
 
 const createMaxFrameLabel = (
-  stats: Observable<{ rendererId: string; renderingStats: RenderingStats }>,
-  r: RendererController<any>
+  stats: Observable<RendererStats>,
+  rendererController: RendererController<any>,
+  index: number
 ) => {
   const maxFrameLabel = document.createElement("label");
   maxFrameLabel.textContent = "Max: ?ms";
   maxFrameLabel.style.marginRight = "5px";
   stats.attach(x => {
-    if (x.rendererId === r.id) {
-      maxFrameLabel.textContent = `Max: ${x.renderingStats.maxFrameTime.toFixed(
-        2
-      )}ms`;
+    if (x.rendererId === rendererController.id && x.renderingStats[index]) {
+      maxFrameLabel.textContent = `Max: ${x.renderingStats[
+        index
+      ].maxFrameTime.toFixed(2)}ms`;
 
-      maxFrameLabel.style.color = getFrameColor(x.renderingStats.maxFrameTime);
+      maxFrameLabel.style.color = getFrameColor(
+        x.renderingStats[index].maxFrameTime
+      );
     }
   });
   return maxFrameLabel;
 };
 
 const createTimelineCanvas = (
-  stats: Observable<{ rendererId: string; renderingStats: RenderingStats }>,
-  renderer: RendererController<any>
+  stats: Observable<RendererStats>,
+  rendererController: RendererController<any>,
+  index: number
 ) => {
   const canvas = document.createElement("canvas");
   const width = 240;
@@ -193,9 +239,9 @@ const createTimelineCanvas = (
   }
 
   stats.attach(x => {
-    if (x.rendererId === renderer.id) {
+    if (x.rendererId === rendererController.id && x.renderingStats[index]) {
       if (context === null) return;
-      const frameTime = x.renderingStats.averageFrameTime;
+      const frameTime = x.renderingStats[index].averageFrameTime;
       context.drawImage(
         canvas,
         0,

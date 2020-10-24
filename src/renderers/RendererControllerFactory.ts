@@ -1,4 +1,3 @@
-import { RendererExecutionEnvironment } from "./RendererExecutionEnvironment";
 import { RenderMode } from "../types/common";
 import {
   RenderingPerformanceMonitor,
@@ -17,6 +16,7 @@ import {
 import { RenderBalancerOptions } from "./RenderingBalancer";
 import { isOffscreenCanvasSupported } from "../utils/dom";
 import { WebWorkerOrchestratedRenderer } from "./WebWorkerOrchestratedRenderer";
+import { RendererExecutionEnvironment } from "./RendererExecutionEnvironment";
 
 export class RendererControllerFactory<TPayload> {
   renderSchedulerFactory: (rendererId: string) => RenderScheduler;
@@ -27,7 +27,7 @@ export class RendererControllerFactory<TPayload> {
       profiling?: {
         onRendererStatsUpdated: (
           rendererId: string,
-          renderingStats: RenderingStats
+          renderingStats: RenderingStats | RenderingStats[]
         ) => void;
       };
     },
@@ -70,7 +70,7 @@ export class RendererControllerFactory<TPayload> {
       ),
       payloadSelector,
       enabled,
-      executionEnvironment: "mainThread",
+      executionEnvironment: { type: "mainThread" },
     };
 
     controller.renderer.setVisibility(controller.enabled);
@@ -110,14 +110,15 @@ export class RendererControllerFactory<TPayload> {
             contructorFunction,
             contructorParams
           ),
-          "webWorker" as RendererExecutionEnvironment,
+          { type: "webWorker" } as RendererExecutionEnvironment,
         ]
       : [
           new contructorFunction(
             this.renderSchedulerFactory(id),
             ...contructorParams
           ),
-          "mainThread" as RendererExecutionEnvironment,
+          { type: "mainThread" } as RendererExecutionEnvironment,
+          ,
         ];
 
     const controller: RendererController<TPayload> = {
@@ -159,7 +160,7 @@ export class RendererControllerFactory<TPayload> {
             renderMode: this.options.renderMode,
             profiling: this.options.profiling
               ? {
-                  onRendererStatsUpdated: (renderingStats: RenderingStats) =>
+                  onRendererStatsUpdated: (renderingStats: RenderingStats[]) =>
                     this.options.profiling?.onRendererStatsUpdated(
                       id,
                       renderingStats
@@ -183,8 +184,11 @@ export class RendererControllerFactory<TPayload> {
       payloadSelector,
       enabled,
       executionEnvironment: isOffscreenCanvasSupported()
-        ? "orchestratedWebWorkers"
-        : "mainThread",
+        ? ({
+            type: "orchestratedWebWorkers",
+            maxWorkers: balancerOptions.maxExecutors,
+          } as RendererExecutionEnvironment)
+        : { type: "mainThread" },
     };
 
     controller.renderer.setVisibility(controller.enabled);

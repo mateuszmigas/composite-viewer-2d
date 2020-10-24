@@ -15,7 +15,7 @@ import { ProxyRenderer } from "../types/proxy";
 type OrchestratingRendererOptions = {
   renderMode: RenderMode;
   profiling?: {
-    onRendererStatsUpdated: (renderingStats: RenderingStats) => void;
+    onRendererStatsUpdated: (renderingStats: RenderingStats[]) => void;
   };
   balancerOptions: RenderBalancerOptions;
 };
@@ -59,6 +59,8 @@ export class WebWorkerOrchestratedRenderer<
     };
 
     this.rendererFactory = (index: number) => {
+      console.log("cretin for ", index);
+
       return new WebWorkerRendererProxy(
         () => workerFactory(index),
         {
@@ -84,15 +86,31 @@ export class WebWorkerOrchestratedRenderer<
     );
 
     this.checkTimerHandler = window.setInterval(() => {
+      console.log("a");
+
       if (this.renderers.every(r => r.stats !== null)) {
         console.log("checking");
 
+        if (this.renderers.length >= this.balancerOptions.maxExecutors) return;
+        const newLocal = this.rendererFactory(this.renderers.length);
+
+        newLocal.setVisibility(true);
+
+        if (this.payload) newLocal.render(this.payload);
         // this.renderers.forEach(r => (r.stats = null));
+
+        this.renderers.push({
+          renderer: newLocal,
+          payloadSelector: a => a,
+          stats: null,
+        });
       }
     }, this.balancerOptions.frequency);
   }
 
   private updateStats(index: number, renderingStats: RenderingStats) {
+    console.log("updating stats", index);
+
     const stats = this.renderers[index].stats ?? {
       framesCount: 0,
       totalRenderTime: 0,
@@ -106,13 +124,14 @@ export class WebWorkerOrchestratedRenderer<
       renderingStats.maxFrameTime
     );
     this.renderers[index].stats = stats;
-    console.log("stats", index, stats);
+
+    if (index === 0) this.tryTriggerForAll();
   }
 
   private tryTriggerForAll() {
     if (this.renderers.some(r => r.stats === null)) return;
 
-    this.options.profiling?.onRendererStatsUpdated(this.calculateStats()[0]);
+    this.options.profiling?.onRendererStatsUpdated(this.calculateStats());
   }
 
   private calculateStats(): RenderingStats[] {
@@ -124,8 +143,10 @@ export class WebWorkerOrchestratedRenderer<
       };
     });
   }
+  payload: any;
 
   render(renderPayload: TRendererPayload): void {
+    this.payload = renderPayload;
     this.renderers.forEach(r =>
       r.renderer.render(r.payloadSelector(renderPayload))
     );
