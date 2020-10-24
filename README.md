@@ -25,11 +25,45 @@ Sample renderers:
 - PixiJS
 and more.
 
+## How it works
+graph here
+
 ## Creating renderer
 Implement GenericRenderer interface
 
-## Offscreen rendering
+## RenderScheduler
+When rendering with multiple renderers in main thread and webworkers you may or may not want to synchronize output. Library comes with multiple types of schedulers:
+- instantRenderer
+- rafScheduler
+- ...
 
+## Offscreen rendering requirements
+This library can move the renderer to the web worker assuming the browser supports it. If it's not supported it will fallback to main thread rendering.
+
+There are some requirements:
+1. Your renderer needs to have contructor of type (renderScheduler: RenderScheduler, canvas: HtmlCanvasElement, ...otherParams: Serializable<T>)
+- renderScheduler will be used to synchronize rendering with main thread. You don't have to use it but it's better to do so
+- canvas - this is the element it will draw on, control will be transfered to offscreen
+- otherParams - any params that can be serialized. This renderer will be created in web worker so this data has to be passed through postMessage
+2. RenderPayload passed to render function needs to be serializable for same reason as above
+3. You need to create web worker file template and expose it to rendering proxy with renderer contructor types:
+//renderWorker.template.ts
+import { MyCustomRenderer } from "./MyCustomRenderer";
+import { exposeToProxy } from "./viewer2d";
+const renderWorker: Worker = self as any;
+exposeToProxy(renderWorker, [MyCustomRenderer]); 
+4. You need to pass function that creates web workers to renderer factory. Library has no way of knowing how your boundling system works so you need to tell it how to create web workers
+  
+and that's it. Now your renderer can be used either on main thread or in webworker(s). This also ensures it can be orchestrated (spread into multiple workers)
+
+## Offcreen rendering orchestration
+It's possible to spawn multiple web workers for your renderer. 
+Create your renderer with ....
+
+Initially it will spawn one web worker and monitor it's performance. If it's less than {16ms} it will spawn another worker and split rendering.
+There are two ways:
+- ....
+- ....
 
 ## Typescript
 While it's possible to use it from Javascript it's recommended to use it with Typescript for best experience. It's obviously written in Typescript and favors compiletime checking over runtime exceptions.  
