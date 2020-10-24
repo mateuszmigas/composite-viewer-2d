@@ -32,10 +32,12 @@ graph here
 Implement GenericRenderer interface
 
 ## RenderScheduler
-When rendering with multiple renderers in main thread and webworkers you may or may not want to synchronize output. Library comes with multiple types of schedulers:
-- instantRenderer
-- rafScheduler
-- ...
+When rendering with multiple renderers in main thread and webworkers you may or may not want to synchronize stuff:
+
+| Scheduler                  | Description                                                                                                      |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `instantRenderer` | Initial values for part of the state that will be controlled by the hook                                         |
+| `rafScheduler`        | Current values of part of the state that will be controlled by the Component                                     |
 
 ## Offscreen rendering requirements
 This library can move the renderer to the web worker assuming the browser supports it. If it's not supported it will fallback to main thread rendering.
