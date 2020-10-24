@@ -9,7 +9,6 @@ import {
   ViewportManipulator,
   createCanvasElement,
   RendererControllerFactory,
-  Unsubscribe,
   PerformanceMonitorPanel,
 } from "./viewer2d";
 
@@ -84,7 +83,7 @@ export class Viewer2DHost extends React.PureComponent<
 
     const rendererControllers = [
       factory.create(
-        "Canvas_2D_1",
+        "Canvas_2D_2",
         Canvas2DSimpleRenderer,
         [this.createCanvas(101)],
         payload => ({
@@ -93,15 +92,20 @@ export class Viewer2DHost extends React.PureComponent<
         true
       ),
       factory.createOrchestratedOffscreenIfAvailable(
-        "Canvas_2D_2",
+        "Canvas_2D_3",
         Canvas2DSimpleRenderer,
-        [this.createCanvas(102)],
+        [],
+        index => this.createCanvas(200 + index),
         payload => ({
           rectangles: payload.someRectangles2,
-          circles: [],
         }),
-        true,
-        { adjustPayloadPolicy: "spreadEvenly" }
+        {
+          adjustPayloadPolicy: "spreadEvenly",
+          minExecutors: 2,
+          maxExecutors: 8,
+          frequency: 5000,
+        },
+        true
       ),
     ];
     perfMonitorPanel.addRenderers(rendererControllers);
@@ -133,8 +137,8 @@ export class Viewer2DHost extends React.PureComponent<
       //     color: randomColor(),
       //   },
       // ],
-      someRectangles1: generateRandomRectangles(6000),
-      someRectangles2: generateRandomRectangles(6000),
+      someRectangles1: generateRandomRectangles(1),
+      someRectangles2: generateRandomRectangles(3),
       // someRectangles2: [
       //   {
       //     type: "Rectangle",

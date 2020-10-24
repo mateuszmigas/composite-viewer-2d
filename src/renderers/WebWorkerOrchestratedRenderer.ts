@@ -1,10 +1,14 @@
+import { repeatNTimes } from "./../common/arrayExtensions";
 import { WebWorkerRendererProxy } from "./WebWorkerRendererProxy";
 import { RenderingStats } from "./RenderingPerformanceMonitor";
 import { RendererController } from "./RendererController";
 import { GenericRender, Renderer } from "./Renderer";
 import { PickingOptions, PickingResult } from "../picking";
 import { RenderMode, Serializable, Size, Viewport } from "../types";
-import { RenderBalancerOptions } from "./RenderingBalancer";
+import {
+  AdjustPayloadPolicy,
+  RenderBalancerOptions,
+} from "./RenderingBalancer";
 import { isOffscreenCanvasSupported } from "..";
 import { ProxyRenderer } from "../types/proxy";
 
@@ -13,49 +17,113 @@ type OrchestratingRendererOptions = {
   profiling?: {
     onRendererStatsUpdated: (renderingStats: RenderingStats) => void;
   };
-} & RenderBalancerOptions;
+  balancerOptions: RenderBalancerOptions;
+};
+
+const defaultOptions: Required<RenderBalancerOptions> = {
+  adjustPayloadPolicy: "spreadEvenly",
+  minExecutors: 1,
+  maxExecutors: 8,
+  frequency: 5000,
+};
+
+type OrchestratorStats = {
+  framesCount: number;
+  totalRenderTime: number;
+  maxFrameTime: number;
+};
 
 export class WebWorkerOrchestratedRenderer<
   TRendererPayload,
   TParams extends any[]
 > implements GenericRender<TRendererPayload> {
-  //balancer: RenderBalancerOptions;
   renderers: {
     readonly renderer: Renderer;
     payloadSelector: (payload: TRendererPayload) => unknown;
+    stats: OrchestratorStats | null;
   }[];
+  private checkTimerHandler: number;
+  private balancerOptions: Required<RenderBalancerOptions>;
+  private rendererFactory: (index: number) => Renderer;
 
-  //policy
   constructor(
     workerFactory: (index: number) => Worker,
-    renderingOptions: OrchestratingRendererOptions,
+    canvasFactory: (index: number) => HTMLCanvasElement,
+    private options: OrchestratingRendererOptions,
     rendererConstructor: ProxyRenderer<TRendererPayload, TParams>,
-    rendererParams: [HTMLCanvasElement, ...Serializable<TParams>]
+    rendererParams: Serializable<TParams>
   ) {
-    const creator = (index: number) => {
+    this.balancerOptions = {
+      ...defaultOptions,
+      ...options.balancerOptions,
+    };
+
+    this.rendererFactory = (index: number) => {
       return new WebWorkerRendererProxy(
         () => workerFactory(index),
         {
-          renderMode: renderingOptions.renderMode,
-          // profiling: this.options.profiling
-          //   ? {
-          //       onRendererStatsUpdated: (renderingStats: RenderingStats) =>
-          //         this.options.profiling?.onRendererStatsUpdated(
-          //           id,
-          //           renderingStats
-          //         ),
-          //     }
-          //   : undefined,
+          renderMode: options.renderMode,
+          profiling: options.profiling
+            ? {
+                onRendererStatsUpdated: (renderingStats: RenderingStats) =>
+                  this.updateStats(index, renderingStats),
+              }
+            : undefined,
         },
         rendererConstructor,
-        rendererParams
+        [canvasFactory(index), ...rendererParams]
       );
     };
-    this.renderers = [{ renderer: creator(0), payloadSelector: a => a }];
-    //this.options = renderingOptions;
+
+    this.renderers = repeatNTimes(this.balancerOptions.minExecutors).map(
+      index => ({
+        renderer: this.rendererFactory(index),
+        payloadSelector: a => a,
+        stats: null,
+      })
+    );
+
+    this.checkTimerHandler = window.setInterval(() => {
+      if (this.renderers.every(r => r.stats !== null)) {
+        console.log("checking");
+
+        // this.renderers.forEach(r => (r.stats = null));
+      }
+    }, this.balancerOptions.frequency);
   }
 
-  private createWorkerRenderer() {}
+  private updateStats(index: number, renderingStats: RenderingStats) {
+    const stats = this.renderers[index].stats ?? {
+      framesCount: 0,
+      totalRenderTime: 0,
+      maxFrameTime: 0,
+    };
+
+    stats.framesCount++;
+    stats.totalRenderTime += renderingStats.averageFrameTime;
+    stats.maxFrameTime = Math.max(
+      stats.maxFrameTime,
+      renderingStats.maxFrameTime
+    );
+    this.renderers[index].stats = stats;
+    console.log("stats", index, stats);
+  }
+
+  private tryTriggerForAll() {
+    if (this.renderers.some(r => r.stats === null)) return;
+
+    this.options.profiling?.onRendererStatsUpdated(this.calculateStats()[0]);
+  }
+
+  private calculateStats(): RenderingStats[] {
+    return this.renderers.map(r => {
+      const stats = r.stats as OrchestratorStats;
+      return {
+        maxFrameTime: stats.maxFrameTime,
+        averageFrameTime: stats.totalRenderTime / stats.framesCount,
+      };
+    });
+  }
 
   render(renderPayload: TRendererPayload): void {
     this.renderers.forEach(r =>
@@ -83,7 +151,18 @@ export class WebWorkerOrchestratedRenderer<
   }
 
   dispose(): void {
+    clearInterval(this.checkTimerHandler);
     this.forEachRenderer(r => r.dispose());
+  }
+
+  private addRenderer() {}
+
+  private removeRenderer() {
+    if (this.balancerOptions.adjustPayloadPolicy === "spreadEvenly") {
+      //remove random
+    } else {
+      //remove slowest
+    }
   }
 
   private forEachRenderer(callback: (renderer: Renderer) => void) {

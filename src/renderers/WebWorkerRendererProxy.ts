@@ -11,7 +11,6 @@ import {
 } from "./RenderScheduler";
 import { Canvas2DSimpleRenderer } from "./Canvas2DSimpleRenderer";
 import { Size, Viewport } from "../types";
-import { isOffscreenCanvasSupported } from "../utils/dom";
 import { RenderMode, Serializable } from "./../types/common";
 import { PickingOptions, PickingResult } from "../picking";
 import {
@@ -20,7 +19,6 @@ import {
   ProxyReturnEventListener,
   ProxyRenderer,
 } from "../types/proxy";
-import { RendererExecutionEnvironment } from "./RendererExecutionEnvironment";
 
 type WebWorkerCompatibleRenderer = ProxyRenderer<any, any>;
 type ProxyOptions = {

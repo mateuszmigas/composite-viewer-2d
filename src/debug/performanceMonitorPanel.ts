@@ -9,6 +9,7 @@ export class PerformanceMonitorPanel {
     rendererId: string;
     renderingStats: RenderingStats;
   }>(null);
+  renderersToKeepAlive: { id: string; lastUpdate: number }[] = [];
   isEnabled = true;
 
   constructor() {
@@ -34,8 +35,24 @@ export class PerformanceMonitorPanel {
   }
 
   updateStats = (rendererId: string, renderingStats: RenderingStats) => {
-    if (this.isEnabled)
+    if (this.isEnabled) {
+      const now = Date.now();
+      const item = this.renderersToKeepAlive.find(
+        item => item.id === rendererId
+      );
+      if (item) {
+        item.lastUpdate = now;
+      } else {
+        this.renderersToKeepAlive.push({
+          id: rendererId,
+          lastUpdate: now,
+        });
+      }
+
+      this.clearDeadRenderers(now);
+
       this.statsObservable.setValue({ rendererId, renderingStats });
+    }
   };
 
   addRenderers(controllers: RendererController<any>[]) {
@@ -43,6 +60,8 @@ export class PerformanceMonitorPanel {
       this.contentElement.appendChild(p)
     );
   }
+
+  private clearDeadRenderers(now: number) {}
 }
 
 const getFrameColor = (duration: number) => {

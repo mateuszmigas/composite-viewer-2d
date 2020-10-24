@@ -1,6 +1,9 @@
 import { Color, RenderRectangleObject } from "./viewer2d";
 
-export const repeat = (count: number) => Array(count).fill({});
+export const repeat = (count: number) =>
+  Array(count)
+    .fill({})
+    .map((_, index) => index);
 
 export const randomInteger = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1) + min);

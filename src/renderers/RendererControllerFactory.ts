@@ -138,10 +138,11 @@ export class RendererControllerFactory<TPayload> {
   >(
     id: string,
     contructorFunction: ProxyRenderer<TRendererPayload, TParams>,
-    contructorParams: [HTMLCanvasElement, ...Serializable<TParams>],
+    contructorParams: Serializable<TParams>,
+    canvasFactory: (index: number) => HTMLCanvasElement,
     payloadSelector: (payload: TPayload) => TRendererPayload,
-    enabled: boolean,
-    balancerOptions: RenderBalancerOptions
+    balancerOptions: RenderBalancerOptions,
+    enabled: boolean
   ): RendererController<TPayload> {
     const renderer = isOffscreenCanvasSupported()
       ? new WebWorkerOrchestratedRenderer(
@@ -153,6 +154,7 @@ export class RendererControllerFactory<TPayload> {
             }
             return this.workerFactory(`${id}_${index}`);
           },
+          canvasFactory,
           {
             renderMode: this.options.renderMode,
             profiling: this.options.profiling
@@ -164,13 +166,14 @@ export class RendererControllerFactory<TPayload> {
                     ),
                 }
               : undefined,
-            ...balancerOptions,
+            balancerOptions,
           },
           contructorFunction,
           contructorParams
         )
       : new contructorFunction(
           this.renderSchedulerFactory(id),
+          canvasFactory(0),
           ...contructorParams
         );
 
