@@ -10,3 +10,4 @@ export type Serializable<T> = T extends string | number | boolean | null
   : never;
 
 export type ValueOf<T> = T[keyof T];
+export type Nullable<T> = { [P in keyof T]: T[P] | null };
