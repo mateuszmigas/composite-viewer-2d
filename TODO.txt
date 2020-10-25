@@ -1,6 +1,7 @@
 todo:
 - renderpatch restrictions for orchestrator
 - profiler text in canvas2s
+- refactor profiling options
 - treejs plugin
 - pixijs plugin
 - react plugin

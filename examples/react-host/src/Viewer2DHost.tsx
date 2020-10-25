@@ -73,7 +73,7 @@ export class Viewer2DHost extends React.PureComponent<
 
     const factory = new RendererControllerFactory<MyRenderPayload>(
       {
-        renderMode: "onDemand",
+        renderMode: "continuous",
         profiling: {
           onRendererStatsUpdated: perfMonitorPanel.updateStats,
         },

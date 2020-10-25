@@ -9,7 +9,10 @@ export class RenderingPerformanceMonitor {
   totalRenderTime = 0;
   maxFrameTime = 0;
 
-  constructor(public onStatsReady: (stats: RenderingStats) => void) {}
+  constructor(
+    private onStatsReady: (stats: RenderingStats) => void,
+    private options: { updateStatsOnFrameCount?: number }
+  ) {}
 
   start() {
     this.beginTime = Date.now();
@@ -21,7 +24,8 @@ export class RenderingPerformanceMonitor {
     this.maxFrameTime = Math.max(this.maxFrameTime, timeElapsed);
     this.frames++;
 
-    if (this.frames > 60) {
+    const frameCount = this.options.updateStatsOnFrameCount || 60;
+    if (this.frames > frameCount) {
       const stats = {
         maxFrameTime: this.maxFrameTime,
         averageFrameTime: this.totalRenderTime / this.frames,

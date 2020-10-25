@@ -25,6 +25,7 @@ type ProxyOptions = {
   renderMode: RenderMode;
   profiling?: {
     onRendererStatsUpdated: (renderingStats: RenderingStats) => void;
+    updateStatsOnFrameCount?: number;
   };
 };
 type RenderProxyReturnEvent = ProxyReturnEvent<Renderer>;
@@ -47,6 +48,7 @@ type RenderProxyEvent =
         options: {
           renderMode: RenderMode;
           enableProfiling: boolean;
+          updateStatsOnFrameCount?: number;
         }
       ];
     }
@@ -82,6 +84,8 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
           {
             renderMode: renderingOptions.renderMode,
             enableProfiling: !!renderingOptions.profiling,
+            updateStatsOnFrameCount:
+              renderingOptions.profiling?.updateStatsOnFrameCount,
           },
         ],
       },
@@ -238,11 +242,13 @@ export const exposeToProxy = (
           const enhancedRenderScheduler = options.enableProfiling
             ? enhanceWithProfiler(
                 renderScheduler,
-                new RenderingPerformanceMonitor(stats =>
-                  postWorkerMessage({
-                    messageType: "renderingStats",
-                    messageData: stats,
-                  })
+                new RenderingPerformanceMonitor(
+                  stats =>
+                    postWorkerMessage({
+                      messageType: "renderingStats",
+                      messageData: stats,
+                    }),
+                  { updateStatsOnFrameCount: options.updateStatsOnFrameCount }
                 )
               )
             : renderScheduler;

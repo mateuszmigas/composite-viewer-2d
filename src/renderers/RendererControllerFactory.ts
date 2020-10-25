@@ -7,7 +7,7 @@ import { WebWorkerRendererProxy } from "./WebWorkerRendererProxy";
 import { Serializable } from "../types/common";
 import { ProxyRenderer } from "../types/proxy";
 import { RendererController } from "./RendererController";
-import { GenericRender, Renderer } from "./Renderer";
+import { GenericRender } from "./Renderer";
 import {
   createRenderSchedulerForMode,
   enhanceWithProfiler,
@@ -29,6 +29,7 @@ export class RendererControllerFactory<TPayload> {
           rendererId: string,
           renderingStats: RenderingStats | RenderingStats[]
         ) => void;
+        updateStatsOnFrameCount?: number;
       };
     },
     private workerFactory?: (rendererId: string) => Worker
@@ -39,11 +40,16 @@ export class RendererControllerFactory<TPayload> {
       return options.profiling
         ? enhanceWithProfiler(
             renderScheduler,
-            new RenderingPerformanceMonitor(renderingStats =>
-              options.profiling?.onRendererStatsUpdated(
-                rendererId,
-                renderingStats
-              )
+            new RenderingPerformanceMonitor(
+              renderingStats =>
+                options.profiling?.onRendererStatsUpdated(
+                  rendererId,
+                  renderingStats
+                ),
+              {
+                updateStatsOnFrameCount:
+                  options.profiling?.updateStatsOnFrameCount,
+              }
             )
           )
         : renderScheduler;

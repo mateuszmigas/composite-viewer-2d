@@ -29,6 +29,16 @@ type PerformanceStats = {
   maxFrameTime: number;
 };
 
+type PerformanceCheckResult<TRendererPayload> =
+  | {
+      needsBalancing: false;
+    }
+  | {
+      needsBalancing: true;
+      removeByIndex: number[];
+      payloadSelectors: ((payload: TRendererPayload) => unknown)[];
+    };
+
 //compositeProxy
 export class WebWorkerOrchestratedRenderer<
   TRendererPayload,
@@ -88,10 +98,10 @@ export class WebWorkerOrchestratedRenderer<
       })
     );
 
-    this.balancerTimerHandler = window.setInterval(
-      () => this.runBalancer(),
-      this.balancerOptions.frequency
-    );
+    this.balancerTimerHandler = window.setInterval(() => {
+      this.runBalancer();
+      this.renderers.forEach(r => (r.balancerStats = null));
+    }, this.balancerOptions.frequency);
   }
 
   render(renderPayload: TRendererPayload): void {
@@ -133,6 +143,12 @@ export class WebWorkerOrchestratedRenderer<
 
     console.log("runBalancer");
 
+    const result = this.checkPerformance(
+      this.renderers.map(r => r.balancerStats as PerformanceStats)
+    );
+
+    if (!result.needsBalancing) return;
+
     if (this.renderers.length >= this.balancerOptions.maxExecutors) return;
 
     const renderer = this.rendererFactory(this.renderers.length);
@@ -146,14 +162,48 @@ export class WebWorkerOrchestratedRenderer<
     if (this.stateToReplicate.renderPayload)
       renderer.render(this.stateToReplicate.renderPayload);
 
-    this.renderers.forEach(r => (r.balancerStats = null));
-
     this.renderers.push({
       renderer: renderer,
       payloadSelector: a => a,
       profilerStats: null,
       balancerStats: null,
     });
+  }
+
+  getChunk = (index: number, count: number, array: any[]) => {
+    const chunk = Math.ceil(array.length / count);
+    const start = index * chunk;
+    const end = Math.min(start + chunk, array.length);
+    return array.slice(start, end);
+  };
+
+  private checkPerformance(
+    rendererStats: PerformanceStats[]
+  ): PerformanceCheckResult<TRendererPayload> {
+    const averageFps =
+      rendererStats.reduce(
+        (sum, r) => sum + r.totalRenderTime / r.framesCount,
+        0
+      ) / rendererStats.length;
+
+    if (averageFps < 5) {
+      return {
+        needsBalancing: true,
+        removeByIndex: [rendererStats.length - 1],
+        payloadSelectors: [],
+      };
+    }
+
+    if (averageFps < 16)
+      return {
+        needsBalancing: false,
+      };
+
+    return {
+      needsBalancing: true,
+      removeByIndex: [],
+      payloadSelectors: [],
+    };
   }
 
   private updateStats(index: number, renderingStats: RenderingStats) {
@@ -205,26 +255,5 @@ export class WebWorkerOrchestratedRenderer<
 
   private forEachRenderer(callback: (renderer: Renderer) => void) {
     this.renderers.forEach(r => callback(r.renderer));
-  }
-
-  private checkPerformance(): "ok" | "tooFast" | "tooSlow" {
-    return "ok";
-  }
-
-  private adjustPayload() {
-    const performance = this.checkPerformance();
-    const renderersCount = this.renderers.length;
-
-    // if (
-    //   performance === "tooFast" &&
-    //   renderersCount > this.renderingOptions.minRenderers
-    // ) {
-    //   //merge
-    // } else if (
-    //   performance === "tooSlow" &&
-    //   renderersCount < this.options.maxRenderers
-    // ) {
-    //   //add more
-    // }
   }
 }
