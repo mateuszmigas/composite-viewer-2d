@@ -1,23 +1,26 @@
 import { Nullable } from "./../types/common";
-import { repeatNTimes } from "./../common/arrayExtensions";
+import { createIndexArray } from "./../common/arrayExtensions";
 import { WebWorkerRendererProxy } from "./WebWorkerRendererProxy";
 import { RenderingStats } from "./RenderingPerformanceMonitor";
 import { GenericRender, Renderer } from "./Renderer";
 import { PickingOptions, PickingResult } from "../picking";
 import { RenderMode, Serializable, Size, Viewport } from "../types";
-import { RenderBalancerOptions } from "./RenderingBalancer";
+import {
+  AdjustPayloadPolicy,
+  RenderBalancerOptions,
+} from "./RenderingBalancer";
 import { ProxyRenderer } from "../types/proxy";
 
-type OrchestratingRendererOptions = {
+type OrchestratingRendererOptions<TRendererPayload> = {
   renderMode: RenderMode;
   profiling?: {
     onRendererStatsUpdated: (renderingStats: RenderingStats[]) => void;
   };
-  balancerOptions: RenderBalancerOptions;
+  balancerOptions: RenderBalancerOptions<TRendererPayload>;
 };
 
-const defaultOptions: Required<RenderBalancerOptions> = {
-  adjustPayloadPolicy: "spreadEvenly",
+const defaultOptions = {
+  adjustPayloadPolicy: "spreadEvenly" as AdjustPayloadPolicy,
   minExecutors: 1,
   maxExecutors: 8,
   frequency: 5000,
@@ -51,7 +54,7 @@ export class WebWorkerOrchestratedRenderer<
     balancerStats: PerformanceStats | null;
   }[];
   private balancerTimerHandler: number;
-  private balancerOptions: Required<RenderBalancerOptions>;
+  private balancerOptions: Required<RenderBalancerOptions<TRendererPayload>>;
   private rendererFactory: (index: number) => Renderer;
 
   private stateToReplicate: Nullable<{
@@ -64,7 +67,7 @@ export class WebWorkerOrchestratedRenderer<
   constructor(
     workerFactory: (index: number) => Worker,
     canvasFactory: (index: number) => HTMLCanvasElement,
-    private options: OrchestratingRendererOptions,
+    private options: OrchestratingRendererOptions<TRendererPayload>,
     rendererConstructor: ProxyRenderer<TRendererPayload, TParams>,
     rendererParams: Serializable<TParams>
   ) {
@@ -89,7 +92,7 @@ export class WebWorkerOrchestratedRenderer<
         [canvasFactory(index), ...rendererParams]
       );
 
-    this.renderers = repeatNTimes(this.balancerOptions.minExecutors).map(
+    this.renderers = createIndexArray(this.balancerOptions.minExecutors).map(
       index => ({
         renderer: this.rendererFactory(index),
         payloadSelector: a => a,
@@ -170,11 +173,29 @@ export class WebWorkerOrchestratedRenderer<
     });
   }
 
-  getChunk = (index: number, count: number, array: any[]) => {
-    const chunk = Math.ceil(array.length / count);
-    const start = index * chunk;
+  getChunk = <T extends any[]>(
+    chunkIndex: number,
+    totalChunks: number,
+    array: T[]
+  ) => {
+    const chunk = Math.ceil(array.length / totalChunks);
+    const start = chunkIndex * chunk;
     const end = Math.min(start + chunk, array.length);
     return array.slice(start, end);
+  };
+
+  //selector
+
+  transformFields = <T extends { [key: string]: any }>(
+    object: T,
+    fields: string[],
+    transformer: <X extends any[]>(values: X) => any
+  ) => {
+    const newObject: { [key: string]: any } = { ...object };
+    fields.forEach(f => {
+      newObject[f] = transformer(newObject[f]);
+    });
+    return newObject;
   };
 
   private checkPerformance(
@@ -186,11 +207,23 @@ export class WebWorkerOrchestratedRenderer<
         0
       ) / rendererStats.length;
 
+    const newLength = rendererStats.length - 1;
+
+    const foos = createIndexArray(
+      newLength
+    ).map(index => (payload: TRendererPayload) =>
+      this.transformFields(
+        payload,
+        this.options.balancerOptions.balancedFields as string[],
+        value => value.chunk(index, newLength)
+      )
+    );
+
     if (averageFps < 5) {
       return {
         needsBalancing: true,
         removeByIndex: [rendererStats.length - 1],
-        payloadSelectors: [],
+        payloadSelectors: foos,
       };
     }
 

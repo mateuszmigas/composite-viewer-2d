@@ -11,3 +11,8 @@ export type Serializable<T> = T extends string | number | boolean | null
 
 export type ValueOf<T> = T[keyof T];
 export type Nullable<T> = { [P in keyof T]: T[P] | null };
+export type FilterByTypeKeys<T, X> = {
+  [P in keyof T]: T[P] extends X ? P : never;
+}[keyof T];
+export type FilterByType<T, X> = Pick<T, FilterByTypeKeys<T, X>>;
+export type ArrayFieldsOnly<T> = FilterByType<T, any[]>;

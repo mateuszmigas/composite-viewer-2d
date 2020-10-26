@@ -1,4 +1,4 @@
-import { repeatNTimes } from "./../common/arrayExtensions";
+import { createIndexArray } from "./../common/arrayExtensions";
 import { RenderingStats } from "../renderers/RenderingPerformanceMonitor";
 import { RendererController } from "../renderers/RendererController";
 import { Observable } from "../common/observable";
@@ -153,9 +153,9 @@ const createRendererPanel = (
   if (
     rendererController.executionEnvironment.type === "orchestratedWebWorkers"
   ) {
-    repeatNTimes(rendererController.executionEnvironment.maxWorkers).forEach(
-      addStats
-    );
+    createIndexArray(
+      rendererController.executionEnvironment.maxWorkers
+    ).forEach(addStats);
   } else {
     addStats(0);
   }

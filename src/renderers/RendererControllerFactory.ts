@@ -1,4 +1,4 @@
-import { RenderMode } from "../types/common";
+import { ArrayFieldsOnly, FilterByType, RenderMode } from "../types/common";
 import {
   RenderingPerformanceMonitor,
   RenderingStats,
@@ -148,7 +148,7 @@ export class RendererControllerFactory<TPayload> {
     contructorParams: Serializable<TParams>,
     canvasFactory: (index: number) => HTMLCanvasElement,
     payloadSelector: (payload: TPayload) => TRendererPayload,
-    balancerOptions: RenderBalancerOptions,
+    balancerOptions: RenderBalancerOptions<TRendererPayload>,
     enabled: boolean
   ): RendererController<TPayload> {
     const renderer = isOffscreenCanvasSupported()

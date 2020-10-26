@@ -9,6 +9,7 @@ import { RenderScheduler } from "./RenderScheduler";
 type RenderPayload = {
   rectangles: RenderRectangleObject[];
   circles: RenderCircleObject[];
+  layers: string;
 };
 
 export class Canvas2DSimpleRenderer implements GenericRender<RenderPayload> {

@@ -1,4 +1,4 @@
-export const repeatNTimes = (count: number) =>
-  Array(count)
+export const createIndexArray = (length: number) =>
+  Array(length)
     .fill({})
     .map((_, index) => index);

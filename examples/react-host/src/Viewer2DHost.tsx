@@ -98,8 +98,14 @@ export class Viewer2DHost extends React.PureComponent<
         index => this.createCanvas(200 + index),
         payload => ({
           rectangles: payload.someRectangles2,
+          layers: "some layer",
         }),
         {
+          balancedPayloadFields: ["rectangles"],
+          // frameTimeTresholds: {
+          //   tooSlow: 16,
+          //   tooFast: 5
+          // },
           adjustPayloadPolicy: "spreadEvenly",
           minExecutors: 2,
           maxExecutors: 5,
