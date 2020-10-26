@@ -12,6 +12,17 @@ type RenderPayload = {
   layers: string;
 };
 
+export const randomInteger = (min: number, max: number) =>
+  Math.floor(Math.random() * (max - min + 1) + min);
+
+const randomColor = () => {
+  return {
+    r: randomInteger(0, 255),
+    g: randomInteger(0, 255),
+    b: randomInteger(0, 255),
+  };
+};
+
 export class Canvas2DSimpleRenderer implements GenericRender<RenderPayload> {
   private canvasContext:
     | CanvasRenderingContext2D
@@ -21,6 +32,7 @@ export class Canvas2DSimpleRenderer implements GenericRender<RenderPayload> {
   private viewport: Viewport = { position: { x: 0, y: 0 }, zoom: 1 };
   private isVisible = true;
   scheduleRender: () => void;
+  color = randomColor();
 
   constructor(
     renderScheduler: RenderScheduler,

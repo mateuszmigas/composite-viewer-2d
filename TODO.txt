@@ -12,6 +12,13 @@ todo:
 - add angular example
 - add vue example
 
+problems:
+- ios safari - does not like many canvases
+- ios safari - kills inactive workers
+
+bugs:
+- fix not hiding performance monitor text
+
 profiling:
 - observer memory usage, no leaks
 - check idle state, should be min cpu and no gpu
