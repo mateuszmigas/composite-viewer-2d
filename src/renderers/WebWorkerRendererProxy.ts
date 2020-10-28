@@ -161,7 +161,7 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
     const id = generateGuid();
     const type = "dispose";
 
-    this.postWorkerMessage({ type });
+    this.postWorkerMessage({ type, id });
 
     this.listenToCallbackMessage({
       type,
@@ -170,7 +170,6 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
         Object.keys(this.eventListeners).forEach(key =>
           this.removeListener(key)
         );
-        console.log("terminting");
         //this.worker.terminate();
       },
     });
@@ -207,7 +206,6 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
     }: {
       data: RenderProxyReturnEvent;
     }) => {
-      console.log("onmessage1", id);
       if (proxyEvent.type === type && proxyEvent.id === id) {
         if (hasProperty(proxyEvent, "returnData"))
           callback(proxyEvent.returnData);
@@ -278,7 +276,7 @@ export const exposeToProxy = (
                 renderScheduler,
                 new RenderingPerformanceMonitor(
                   stats => {
-                    console.log("posting stats", renderer);
+                    //console.log("posting stats", renderer);
 
                     postWorkerMessage({
                       type: "renderingStats",
@@ -342,9 +340,7 @@ export const exposeToProxy = (
         }
         case "dispose": {
           const { type, id } = proxyEvent;
-
           renderer.dispose();
-
           postWorkerMessage({
             type,
             id,

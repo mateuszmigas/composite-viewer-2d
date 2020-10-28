@@ -89,7 +89,7 @@ export class Viewer2DHost extends React.PureComponent<
         payload => ({
           rectangles: payload.someRectangles1,
         }),
-        true
+        false
       ),
       factory.createOrchestratedOffscreenIfAvailable(
         "Canvas_2D_3",
@@ -105,8 +105,8 @@ export class Viewer2DHost extends React.PureComponent<
           //   tooSlow: 16,
           //   tooFast: 5
           // },
-          minExecutors: 0,
-          maxExecutors: 1,
+          minExecutors: 1,
+          maxExecutors: 2,
           frequency: 2000,
         },
         true
@@ -142,7 +142,7 @@ export class Viewer2DHost extends React.PureComponent<
       //   },
       // ],
       someRectangles1: generateRandomRectangles(5000),
-      someRectangles2: generateRandomRectangles(100),
+      someRectangles2: generateRandomRectangles(80),
       // someRectangles2: [
       //   {
       //     type: "Rectangle",
