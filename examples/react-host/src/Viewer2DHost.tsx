@@ -73,7 +73,7 @@ export class Viewer2DHost extends React.PureComponent<
 
     const factory = new RendererControllerFactory<MyRenderPayload>(
       {
-        renderMode: "onDemand",
+        renderMode: "continuous",
         profiling: {
           onRendererStatsUpdated: perfMonitorPanel.updateStats,
         },
@@ -89,7 +89,7 @@ export class Viewer2DHost extends React.PureComponent<
         payload => ({
           rectangles: payload.someRectangles1,
         }),
-        false
+        true
       ),
       factory.createOrchestratedOffscreenIfAvailable(
         "Canvas_2D_3",
@@ -108,7 +108,7 @@ export class Viewer2DHost extends React.PureComponent<
           //initialExecutors:
           minExecutors: 1,
           maxExecutors: 4,
-          frequency: 2000,
+          frequency: 4000,
         },
         true
       ),
@@ -142,8 +142,8 @@ export class Viewer2DHost extends React.PureComponent<
       //     color: randomColor(),
       //   },
       // ],
-      someRectangles1: generateRandomRectangles(5000),
-      someRectangles2: generateRandomRectangles(80),
+      someRectangles1: generateRandomRectangles(15000),
+      someRectangles2: generateRandomRectangles(12000),
       // someRectangles2: [
       //   {
       //     type: "Rectangle",

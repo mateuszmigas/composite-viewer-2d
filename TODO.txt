@@ -1,8 +1,8 @@
 todo:
-- renderpatch restrictions for orchestrator
-- orchestrator with different kind of renderers
 - profiler text in canvas2s
 - refactor profiling options
+- renderpatch restrictions for orchestrator
+- orchestrator with different kind of renderers
 - treejs plugin
 - pixijs plugin
 - react plugin
@@ -23,9 +23,6 @@ bugs:
 profiling:
 - observer memory usage, no leaks
 - check idle state, should be min cpu and no gpu
-
-done:
-- make sure there is single render at start
 
 remember:
 - each schedule render needs to invoke requestAnimationFrame otherwise

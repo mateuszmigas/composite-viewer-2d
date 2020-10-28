@@ -92,8 +92,10 @@ export class WebWorkerOrchestratedRenderer<
         {
           renderMode: options.renderMode,
           profiling: {
-            onRendererStatsUpdated: (renderingStats: RenderingStats) =>
-              this.updateStats(index, renderingStats),
+            onRendererStatsUpdated: (renderingStats: RenderingStats) => {
+              if (index <= this.orchestratedRenderers.length - 1)
+                this.updateStats(index, renderingStats);
+            },
           },
         },
         rendererConstructor,

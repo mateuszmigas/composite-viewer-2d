@@ -106,6 +106,9 @@ const createRendererPanel = (
   const divMain = document.createElement("div");
   divMain.style.padding = "5px";
   divMain.style.border = "1px solid";
+  divMain.style.display = "flex";
+  divMain.style.flexDirection = "column";
+  divMain.style.width = "240px";
 
   const divHeader = document.createElement("div");
   divHeader.style.display = "flex";
@@ -117,36 +120,6 @@ const createRendererPanel = (
   divMain.appendChild(divHeader);
 
   const addStats = (index: number) => {
-    const divOffline = document.createElement("div");
-    divOffline.textContent = "Offline";
-    divOffline.style.color = "red";
-    divOffline.style.visibility = "collapse";
-
-    const divFrames = document.createElement("div");
-    divFrames.style.display = "flex";
-    divFrames.style.position = "absolute";
-    divFrames.style.justifyContent = "space-between";
-    divFrames.appendChild(
-      createMaxFrameLabel(stats, rendererController, index)
-    );
-    divFrames.appendChild(
-      createAvgFrameLabel(stats, rendererController, index)
-    );
-
-    stats.attach(x => {
-      if (x.rendererId === rendererController.id) {
-        if (x.renderingStats.length < index + 1) {
-          divOffline.style.visibility = "visible";
-          divFrames.style.visibility = "collapse";
-        } else {
-          divOffline.style.visibility = "collapse";
-          divFrames.style.visibility = "visible";
-        }
-      }
-    });
-
-    divMain.appendChild(divFrames);
-    divMain.appendChild(divOffline);
     divMain.appendChild(createTimelineCanvas(stats, rendererController, index));
   };
 
@@ -175,50 +148,6 @@ const createEnableCheckbox = (renderer: RendererController<any>) => {
   return enableCheckbox;
 };
 
-const createAvgFrameLabel = (
-  stats: Observable<RendererStats>,
-  rendererController: RendererController<any>,
-  index: number
-) => {
-  const avgFrameLabel = document.createElement("label");
-  avgFrameLabel.textContent = "Avg: ?ms";
-  avgFrameLabel.style.marginRight = "5px";
-  stats.attach(x => {
-    if (x.rendererId === rendererController.id && x.renderingStats[index]) {
-      avgFrameLabel.textContent = `Avg: ${x.renderingStats[
-        index
-      ].averageFrameTime.toFixed(2)}ms`;
-
-      avgFrameLabel.style.color = getFrameColor(
-        x.renderingStats[index].averageFrameTime
-      );
-    }
-  });
-  return avgFrameLabel;
-};
-
-const createMaxFrameLabel = (
-  stats: Observable<RendererStats>,
-  rendererController: RendererController<any>,
-  index: number
-) => {
-  const maxFrameLabel = document.createElement("label");
-  maxFrameLabel.textContent = "Max: ?ms";
-  maxFrameLabel.style.marginRight = "5px";
-  stats.attach(x => {
-    if (x.rendererId === rendererController.id && x.renderingStats[index]) {
-      maxFrameLabel.textContent = `Max: ${x.renderingStats[
-        index
-      ].maxFrameTime.toFixed(2)}ms`;
-
-      maxFrameLabel.style.color = getFrameColor(
-        x.renderingStats[index].maxFrameTime
-      );
-    }
-  });
-  return maxFrameLabel;
-};
-
 const createTimelineCanvas = (
   stats: Observable<RendererStats>,
   rendererController: RendererController<any>,
@@ -226,12 +155,15 @@ const createTimelineCanvas = (
 ) => {
   const canvas = document.createElement("canvas");
   const width = 240;
-  const height = 40;
+  const height = 60;
+  const statsHeight = 40;
+  const fontSize = 15;
+  const statsStart = height - statsHeight;
   const singleFrameWidth = 4;
   canvas.width = width;
   canvas.height = height;
   const context = canvas.getContext("2d");
-  const backgroundColor = "blue";
+  const backgroundColor = "black";
 
   if (context) {
     context.fillStyle = backgroundColor;
@@ -239,29 +171,53 @@ const createTimelineCanvas = (
   }
 
   stats.attach(x => {
-    if (x.rendererId === rendererController.id && x.renderingStats[index]) {
-      if (context === null) return;
-      const frameTime = x.renderingStats[index].averageFrameTime;
+    if (context === null || x.rendererId !== rendererController.id) return;
+
+    if (x.renderingStats.length < index + 1) {
+      context.fillStyle = backgroundColor;
+      context.fillRect(0, 0, width, statsStart);
+      context.fillStyle = "red";
+      context.font = `${fontSize}px arial`;
+      context.fillText(`Offline`, 0, fontSize);
+    } else if (x.renderingStats[index]) {
+      const frameTime = Math.min(x.renderingStats[index].averageFrameTime, 20);
       context.drawImage(
         canvas,
         0,
-        0,
+        statsStart,
         width - singleFrameWidth,
         height,
         singleFrameWidth,
-        0,
+        statsStart,
         width - singleFrameWidth,
         height
       );
 
       context.fillStyle = backgroundColor;
-      context.fillRect(0, 0, singleFrameWidth, height);
+      context.fillRect(0, 0, width, statsStart);
+      context.fillRect(0, statsStart, singleFrameWidth, statsHeight);
       context.fillStyle = getFrameColor(frameTime);
       context.fillRect(
         0,
         height - 2 * frameTime,
         singleFrameWidth,
         2 * frameTime
+      );
+
+      context.fillStyle = getFrameColor(x.renderingStats[index].maxFrameTime);
+      context.font = `${fontSize}px arial`;
+      context.fillText(
+        `Max: ${x.renderingStats[index].maxFrameTime.toFixed(2)}ms`,
+        0,
+        fontSize
+      );
+      context.fillStyle = getFrameColor(
+        x.renderingStats[index].averageFrameTime
+      );
+      context.fillText(
+        `Max: ${x.renderingStats[index].averageFrameTime.toFixed(2)}ms`,
+        width / 2,
+        fontSize
       );
     }
   });
