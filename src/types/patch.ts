@@ -52,3 +52,9 @@ export const applyPatches = <T>(object: T, patches: Patch<T>[]) => {
     }
   });
 };
+
+//proxy here
+export const createPatchProxy = <T>(object: T) => {
+  //popPatches()
+  //clearPatches()
+};

@@ -1,5 +1,7 @@
 todo:
+- memory leaks in rendercontrollers and safe dispose
 - renderpatch restrictions for orchestrator
+- orchestrator with different kind of renderers
 - profiler text in canvas2s
 - refactor profiling options
 - treejs plugin

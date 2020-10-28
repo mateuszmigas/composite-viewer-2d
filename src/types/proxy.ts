@@ -23,16 +23,12 @@ export type ProxyRenderer<TRendererPayload, TParams extends any[]> = {
 export type ProxyEvent<T> = ValueOf<
   {
     [P in keyof T]: T[P] extends (...args: infer A) => any
-      ? ReturnType<T[P]> extends void
-        ? A extends []
-          ? { messageType: P }
-          : { messageType: P; messageData: Parameters<T[P]> }
-        : A extends []
-        ? { methodType: P; messageIdentifier: string }
+      ? A extends []
+        ? { messageType: P; messageIdentifier?: string }
         : {
             messageType: P;
+            messageIdentifier?: string;
             messageData: Parameters<T[P]>;
-            messageIdentifier: string;
           }
       : never;
   }
@@ -41,25 +37,28 @@ export type ProxyEvent<T> = ValueOf<
 export type ProxyReturnEvent<T> = ValueOf<
   {
     [P in keyof T]: T[P] extends (...args: any) => any
-      ? ReturnType<T[P]> extends void
-        ? never
-        : ReturnType<T[P]> extends Promise<infer A>
-        ? {
-            messageType: P;
-            messageIdentifier?: string;
-            messageReturnValue: ProxyPromiseResult<A>;
-          }
+      ? ReturnType<T[P]> extends Promise<infer A>
+        ? A extends void
+          ? {
+              messageType: P;
+              messageIdentifier?: string;
+              messageReturnPromise: ProxyPromiseResult<never>;
+            }
+          : {
+              messageType: P;
+              messageIdentifier?: string;
+              messageReturnPromise: ProxyPromiseResult<A>;
+            }
         : {
             messageType: P;
             messageIdentifier?: string;
-            messageReturnValue: ReturnType<T[P]>;
           }
       : never;
   }
 >;
 
 export type ProxyReturnEventListener<T> = {
-  messageCallback: (
-    returnValue: ProxyReturnEvent<T>["messageReturnValue"]
-  ) => void;
-} & Omit<ProxyReturnEvent<T>, "messageReturnValue">;
+  messageCallback: ProxyReturnEvent<T> extends { messageReturnPromise: any }
+    ? (returnPromise: ProxyReturnEvent<T>["messageReturnPromise"]) => void
+    : () => void;
+} & Omit<ProxyReturnEvent<T>, "messageReturnPromise">;

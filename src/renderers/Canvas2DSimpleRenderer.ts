@@ -121,7 +121,11 @@ export class Canvas2DSimpleRenderer implements GenericRender<RenderPayload> {
     return Promise.resolve(this.isVisible ? ["a", "b"] : ([] as any));
   }
 
-  dispose(): void {}
+  dispose(): void {
+    console.log("disposing canvas");
+
+    this.clearCanvas();
+  }
 
   private clearCanvas() {
     this.canvasContext.clearRect(0, 0, this.size.width, this.size.height);

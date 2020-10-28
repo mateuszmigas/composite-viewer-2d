@@ -80,19 +80,22 @@ export class WebWorkerOrchestratedRenderer<
         () => workerFactory(index),
         {
           renderMode: options.renderMode,
-          profiling: options.profiling
-            ? {
-                onRendererStatsUpdated: (renderingStats: RenderingStats) =>
-                  this.updateStats(index, renderingStats),
-              }
-            : undefined,
+          profiling: {
+            onRendererStatsUpdated: (renderingStats: RenderingStats) => {
+              console.log("updating stats");
+              // console.log("updating stats", index, this.workerRenderers.length);
+
+              if (index > this.workerRenderers.length - 1) return;
+              this.updateStats(index, renderingStats);
+            },
+          },
         },
         rendererConstructor,
         [canvasFactory(index), ...rendererParams]
       );
 
     this.workerRenderers = createEventPayloads(
-      this.balancerOptions.minExecutors,
+      this.balancerOptions.maxExecutors,
       this.balancerOptions.balancedFields
     ).map((payloadSelector, index) => ({
       renderer: this.rendererFactory(index),
@@ -282,6 +285,10 @@ const checkPerformance = <TRendererPyload>(
       0
     ) / rendererStats.length;
 
+  //
+  return { needsBalancing: false };
+  //
+
   if (averageFps < 5) {
     const newLength = rendererStats.length - 1;
     return newLength < options.minExecutors
@@ -295,7 +302,7 @@ const checkPerformance = <TRendererPyload>(
         };
   }
 
-  if (averageFps > 0) {
+  if (averageFps > 16) {
     const newLength = rendererStats.length + 1;
     return newLength > options.maxExecutors
       ? { needsBalancing: false }

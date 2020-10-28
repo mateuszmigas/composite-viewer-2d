@@ -29,7 +29,13 @@ type ProxyOptions = {
   };
 };
 type RenderProxyReturnEvent = ProxyReturnEvent<Renderer>;
+
 type RenderProxyReturnEventListener = ProxyReturnEventListener<Renderer>;
+const x: RenderProxyReturnEventListener = {
+  messageCallback: () => {},
+  messageType: "pickObjects",
+  messageIdentifier: "3",
+};
 type RenderProxyBackEvent = {
   messageType: "renderingStats";
   messageData: RenderingStats;
@@ -62,6 +68,7 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
   implements Renderer {
   worker: Worker;
   canvas: HTMLCanvasElement;
+  eventListeners: { [key: string]: (...args: any) => void } = {};
 
   constructor(
     workerFactory: () => Worker,
@@ -138,23 +145,37 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
     });
 
     return new Promise((resolve, reject) => {
-      this.listenToCallbackMessage({
-        messageType,
-        messageIdentifier,
-        messageCallback: pickingResult => {
-          if (pickingResult.promiseResolution === "fulfilled") {
-            resolve(pickingResult.result);
-          } else {
-            reject(pickingResult.error);
-          }
-        },
-      });
+      // this.listenToCallbackMessage({
+      //   messageType: "pickObjects",
+      //   messageIdentifier,
+      //   messageCallback: pickingResult => {
+      //     this.removeListener(messageIdentifier);
+      //     if (pickingResult.promiseResolution === "fulfilled") {
+      //       resolve(pickingResult.result);
+      //     } else {
+      //       reject(pickingResult.error);
+      //     }
+      //   },
+      // });
     });
   }
 
   dispose(): void {
+    const messageIdentifier = generateGuid();
+    const messageType = "dispose";
+
     this.postWorkerMessage({ messageType: "dispose" });
-    this.worker.terminate();
+    this.listenToCallbackMessage({
+      messageType,
+      messageIdentifier,
+      messageCallback: () => {
+        console.log("dispose is back");
+      },
+    });
+
+    Object.keys(this.eventListeners).forEach(key => this.removeListener(key));
+    console.log("terminting");
+    //this.worker.terminate();
   }
 
   private postWorkerMessage(
@@ -167,30 +188,42 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
 
   private listenToMessage(listener: RenderProxyBackEventListener) {
     const { messageType, messageCallback } = listener;
-    this.worker.addEventListener(
-      "message",
-      ({ data: proxyEvent }: { data: RenderProxyBackEvent }) => {
-        if (proxyEvent.messageType === messageType) {
-          messageCallback(proxyEvent.messageData);
-        }
+    const callback = ({ data: proxyEvent }: { data: RenderProxyBackEvent }) => {
+      if (proxyEvent.messageType === messageType) {
+        messageCallback(proxyEvent.messageData);
       }
-    );
+    };
+    this.eventListeners[generateGuid()] = callback;
+    this.worker.addEventListener("message", callback);
   }
 
   private listenToCallbackMessage(listener: RenderProxyReturnEventListener) {
     const { messageType, messageIdentifier, messageCallback } = listener;
-    this.worker.onmessage = ({
+
+    const callback = ({
       data: proxyEvent,
     }: {
       data: RenderProxyReturnEvent;
     }) => {
+      console.log("onmessage1", messageIdentifier);
       if (
         proxyEvent.messageType === messageType &&
         proxyEvent.messageIdentifier === messageIdentifier
       ) {
-        messageCallback(proxyEvent.messageReturnValue);
+        //messageCallback(proxyEvent.messageReturnValue);
       }
     };
+
+    //  this.eventListeners[messageIdentifier] = callback;
+    this.worker.addEventListener("message", callback);
+  }
+
+  private removeListener(messageIdentifier: string) {
+    this.worker.removeEventListener(
+      "message",
+      this.eventListeners[messageIdentifier]
+    );
+    delete this.eventListeners[messageIdentifier];
   }
 }
 
@@ -243,11 +276,14 @@ export const exposeToProxy = (
             ? enhanceWithProfiler(
                 renderScheduler,
                 new RenderingPerformanceMonitor(
-                  stats =>
+                  stats => {
+                    console.log("posting stats", renderer);
+
                     postWorkerMessage({
                       messageType: "renderingStats",
                       messageData: stats,
-                    }),
+                    });
+                  },
                   { updateStatsOnFrameCount: options.updateStatsOnFrameCount }
                 )
               )
@@ -285,7 +321,7 @@ export const exposeToProxy = (
               postWorkerMessage({
                 messageType,
                 messageIdentifier,
-                messageReturnValue: {
+                messageReturnPromise: {
                   promiseResolution: "fulfilled",
                   result,
                 },
@@ -295,15 +331,23 @@ export const exposeToProxy = (
               postWorkerMessage({
                 messageType,
                 messageIdentifier,
-                messageReturnValue: {
+                messageReturnPromise: {
                   promiseResolution: "rejected",
                   error,
                 },
               })
             );
+          break;
         }
         case "dispose": {
+          const { messageType, messageIdentifier } = proxyEvent;
+
           renderer.dispose();
+          postWorkerMessage({
+            messageType,
+            messageIdentifier,
+          });
+          //(renderer as any) = undefined;
           break;
         }
         default:
