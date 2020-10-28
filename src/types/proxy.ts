@@ -4,13 +4,17 @@ import { Serializable, ValueOf } from "./common";
 
 type ProxyPromiseResult<T> =
   | {
-      promiseResolution: "fulfilled";
-      result: T;
-    }
-  | {
       promiseResolution: "rejected";
       error: any;
-    };
+    }
+  | (T extends void
+      ? {
+          promiseResolution: "fulfilled";
+        }
+      : {
+          promiseResolution: "fulfilled";
+          result: T;
+        });
 
 export type ProxyRenderer<TRendererPayload, TParams extends any[]> = {
   new (
@@ -24,11 +28,11 @@ export type ProxyEvent<T> = ValueOf<
   {
     [P in keyof T]: T[P] extends (...args: infer A) => any
       ? A extends []
-        ? { messageType: P; messageIdentifier?: string }
+        ? { type: P; id?: string }
         : {
-            messageType: P;
-            messageIdentifier?: string;
-            messageData: Parameters<T[P]>;
+            type: P;
+            id?: string;
+            data: Parameters<T[P]>;
           }
       : never;
   }
@@ -38,27 +42,45 @@ export type ProxyReturnEvent<T> = ValueOf<
   {
     [P in keyof T]: T[P] extends (...args: any) => any
       ? ReturnType<T[P]> extends Promise<infer A>
-        ? A extends void
-          ? {
-              messageType: P;
-              messageIdentifier?: string;
-              messageReturnPromise: ProxyPromiseResult<never>;
-            }
-          : {
-              messageType: P;
-              messageIdentifier?: string;
-              messageReturnPromise: ProxyPromiseResult<A>;
-            }
+        ? {
+            type: P;
+            id?: string;
+            returnData: ProxyPromiseResult<A>;
+          }
+        : ReturnType<T[P]> extends void
+        ? {
+            type: P;
+            id?: string;
+          }
         : {
-            messageType: P;
-            messageIdentifier?: string;
+            type: P;
+            id?: string;
+            returnData: ReturnType<T[P]>;
           }
       : never;
   }
 >;
 
-export type ProxyReturnEventListener<T> = {
-  messageCallback: ProxyReturnEvent<T> extends { messageReturnPromise: any }
-    ? (returnPromise: ProxyReturnEvent<T>["messageReturnPromise"]) => void
-    : () => void;
-} & Omit<ProxyReturnEvent<T>, "messageReturnPromise">;
+export type ProxyReturnEventListener<T> = ValueOf<
+  {
+    [P in keyof T]: T[P] extends (...args: any) => any
+      ? ReturnType<T[P]> extends Promise<infer A>
+        ? {
+            type: P;
+            id?: string;
+            callback: (data: ProxyPromiseResult<A>) => void;
+          }
+        : ReturnType<T[P]> extends void
+        ? {
+            type: P;
+            id?: string;
+            callback: () => void;
+          }
+        : {
+            type: P;
+            id?: string;
+            callback: (data: ReturnType<T[P]>) => void;
+          }
+      : never;
+  }
+>;

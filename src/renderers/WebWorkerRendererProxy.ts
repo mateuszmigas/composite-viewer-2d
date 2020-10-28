@@ -19,6 +19,7 @@ import {
   ProxyReturnEventListener,
   ProxyRenderer,
 } from "../types/proxy";
+import { hasProperty } from "../common/typeGuards";
 
 type WebWorkerCompatibleRenderer = ProxyRenderer<any, any>;
 type ProxyOptions = {
@@ -29,25 +30,20 @@ type ProxyOptions = {
   };
 };
 type RenderProxyReturnEvent = ProxyReturnEvent<Renderer>;
-
 type RenderProxyReturnEventListener = ProxyReturnEventListener<Renderer>;
-const x: RenderProxyReturnEventListener = {
-  messageCallback: () => {},
-  messageType: "pickObjects",
-  messageIdentifier: "3",
-};
+
 type RenderProxyBackEvent = {
-  messageType: "renderingStats";
-  messageData: RenderingStats;
+  type: "renderingStats";
+  data: RenderingStats;
 };
 type RenderProxyBackEventListener = {
-  messageType: "renderingStats";
-  messageCallback: (stats: RenderingStats) => void;
+  type: "renderingStats";
+  callback: (stats: RenderingStats) => void;
 };
 type RenderProxyEvent =
   | {
-      messageType: "createRenderer";
-      messageData: [
+      type: "createRenderer";
+      data: [
         offscreenCanvas: OffscreenCanvas,
         rendererType: string,
         rendererParams: unknown[],
@@ -83,8 +79,8 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
 
     this.postWorkerMessage(
       {
-        messageType: "createRenderer",
-        messageData: [
+        type: "createRenderer",
+        data: [
           offscreenCanvas,
           rendererConstructor.name,
           otherParams,
@@ -101,8 +97,8 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
 
     if (renderingOptions.profiling) {
       this.listenToMessage({
-        messageType: "renderingStats",
-        messageCallback: stats =>
+        type: "renderingStats",
+        callback: stats =>
           renderingOptions.profiling?.onRendererStatsUpdated(stats),
       });
     }
@@ -110,72 +106,74 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
 
   render(renderPayload: unknown): void {
     this.postWorkerMessage({
-      messageType: "render",
-      messageData: [renderPayload],
+      type: "render",
+      data: [renderPayload],
     });
   }
 
   setSize(size: Size): void {
-    this.postWorkerMessage({ messageType: "setSize", messageData: [size] });
+    this.postWorkerMessage({ type: "setSize", data: [size] });
   }
 
   setViewport(viewport: Viewport): void {
     this.postWorkerMessage({
-      messageType: "setViewport",
-      messageData: [viewport],
+      type: "setViewport",
+      data: [viewport],
     });
   }
 
   setVisibility(visible: boolean): void {
     this.canvas.style.visibility = visible ? "visible" : "collapse";
+
     this.postWorkerMessage({
-      messageType: "setVisibility",
-      messageData: [visible],
+      type: "setVisibility",
+      data: [visible],
     });
   }
 
   pickObjects(options: PickingOptions): Promise<PickingResult[]> {
-    const messageIdentifier = generateGuid();
-    const messageType = "pickObjects";
+    const id = generateGuid();
+    const type = "pickObjects";
 
     this.postWorkerMessage({
-      messageType,
-      messageData: [options],
-      messageIdentifier,
+      type,
+      data: [options],
+      id,
     });
 
     return new Promise((resolve, reject) => {
-      // this.listenToCallbackMessage({
-      //   messageType: "pickObjects",
-      //   messageIdentifier,
-      //   messageCallback: pickingResult => {
-      //     this.removeListener(messageIdentifier);
-      //     if (pickingResult.promiseResolution === "fulfilled") {
-      //       resolve(pickingResult.result);
-      //     } else {
-      //       reject(pickingResult.error);
-      //     }
-      //   },
-      // });
+      this.listenToCallbackMessage({
+        type: "pickObjects",
+        id,
+        callback: pickingResult => {
+          this.removeListener(id);
+          if (pickingResult.promiseResolution === "fulfilled") {
+            resolve(pickingResult.result);
+          } else {
+            reject(pickingResult.error);
+          }
+        },
+      });
     });
   }
 
   dispose(): void {
-    const messageIdentifier = generateGuid();
-    const messageType = "dispose";
+    const id = generateGuid();
+    const type = "dispose";
 
-    this.postWorkerMessage({ messageType: "dispose" });
+    this.postWorkerMessage({ type });
+
     this.listenToCallbackMessage({
-      messageType,
-      messageIdentifier,
-      messageCallback: () => {
-        console.log("dispose is back");
+      type,
+      id,
+      callback: () => {
+        Object.keys(this.eventListeners).forEach(key =>
+          this.removeListener(key)
+        );
+        console.log("terminting");
+        //this.worker.terminate();
       },
     });
-
-    Object.keys(this.eventListeners).forEach(key => this.removeListener(key));
-    console.log("terminting");
-    //this.worker.terminate();
   }
 
   private postWorkerMessage(
@@ -187,35 +185,38 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
   }
 
   private listenToMessage(listener: RenderProxyBackEventListener) {
-    const { messageType, messageCallback } = listener;
-    const callback = ({ data: proxyEvent }: { data: RenderProxyBackEvent }) => {
-      if (proxyEvent.messageType === messageType) {
-        messageCallback(proxyEvent.messageData);
+    const { type, callback } = listener;
+    const eventCallback = ({
+      data: proxyEvent,
+    }: {
+      data: RenderProxyBackEvent;
+    }) => {
+      if (proxyEvent.type === type) {
+        callback(proxyEvent.data);
       }
     };
-    this.eventListeners[generateGuid()] = callback;
-    this.worker.addEventListener("message", callback);
+    this.eventListeners[generateGuid()] = eventCallback;
+    this.worker.addEventListener("message", eventCallback);
   }
 
   private listenToCallbackMessage(listener: RenderProxyReturnEventListener) {
-    const { messageType, messageIdentifier, messageCallback } = listener;
+    const { type, id, callback } = listener;
 
-    const callback = ({
+    const eventCallback = ({
       data: proxyEvent,
     }: {
       data: RenderProxyReturnEvent;
     }) => {
-      console.log("onmessage1", messageIdentifier);
-      if (
-        proxyEvent.messageType === messageType &&
-        proxyEvent.messageIdentifier === messageIdentifier
-      ) {
-        //messageCallback(proxyEvent.messageReturnValue);
+      console.log("onmessage1", id);
+      if (proxyEvent.type === type && proxyEvent.id === id) {
+        if (hasProperty(proxyEvent, "returnData"))
+          callback(proxyEvent.returnData);
+        else (callback as () => void)();
       }
     };
 
-    //  this.eventListeners[messageIdentifier] = callback;
-    this.worker.addEventListener("message", callback);
+    this.eventListeners[generateGuid()] = eventCallback;
+    this.worker.addEventListener("message", eventCallback);
   }
 
   private removeListener(messageIdentifier: string) {
@@ -258,14 +259,14 @@ export const exposeToProxy = (
   worker.addEventListener(
     "message",
     ({ data: proxyEvent }: { data: RenderProxyEvent }) => {
-      switch (proxyEvent.messageType) {
+      switch (proxyEvent.type) {
         case "createRenderer": {
           const [
             offscreenCanvas,
             rendererType,
             rendererParams,
             options,
-          ] = proxyEvent.messageData;
+          ] = proxyEvent.data;
 
           const rendererConstructor = getRendererConstructor(rendererType);
 
@@ -280,8 +281,8 @@ export const exposeToProxy = (
                     console.log("posting stats", renderer);
 
                     postWorkerMessage({
-                      messageType: "renderingStats",
-                      messageData: stats,
+                      type: "renderingStats",
+                      data: stats,
                     });
                   },
                   { updateStatsOnFrameCount: options.updateStatsOnFrameCount }
@@ -297,31 +298,31 @@ export const exposeToProxy = (
           break;
         }
         case "setSize": {
-          renderer.setSize(...proxyEvent.messageData);
+          renderer.setSize(...proxyEvent.data);
           break;
         }
         case "setViewport": {
-          renderer.setViewport(...proxyEvent.messageData);
+          renderer.setViewport(...proxyEvent.data);
           break;
         }
         case "setVisibility": {
-          renderer.setVisibility(...proxyEvent.messageData);
+          renderer.setVisibility(...proxyEvent.data);
           break;
         }
         case "render": {
-          renderer.render(...proxyEvent.messageData);
+          renderer.render(...proxyEvent.data);
           break;
         }
         case "pickObjects": {
-          const { messageType, messageData, messageIdentifier } = proxyEvent;
+          const { type, id, data } = proxyEvent;
 
           renderer
-            .pickObjects(...messageData)
+            .pickObjects(...data)
             .then(result =>
               postWorkerMessage({
-                messageType,
-                messageIdentifier,
-                messageReturnPromise: {
+                type,
+                id,
+                returnData: {
                   promiseResolution: "fulfilled",
                   result,
                 },
@@ -329,9 +330,9 @@ export const exposeToProxy = (
             )
             .catch(error =>
               postWorkerMessage({
-                messageType,
-                messageIdentifier,
-                messageReturnPromise: {
+                type,
+                id,
+                returnData: {
                   promiseResolution: "rejected",
                   error,
                 },
@@ -340,12 +341,13 @@ export const exposeToProxy = (
           break;
         }
         case "dispose": {
-          const { messageType, messageIdentifier } = proxyEvent;
+          const { type, id } = proxyEvent;
 
           renderer.dispose();
+
           postWorkerMessage({
-            messageType,
-            messageIdentifier,
+            type,
+            id,
           });
           //(renderer as any) = undefined;
           break;
