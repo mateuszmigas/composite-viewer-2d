@@ -105,8 +105,9 @@ export class Viewer2DHost extends React.PureComponent<
           //   tooSlow: 16,
           //   tooFast: 5
           // },
+          //initialExecutors:
           minExecutors: 1,
-          maxExecutors: 2,
+          maxExecutors: 4,
           frequency: 2000,
         },
         true

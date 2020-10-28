@@ -92,13 +92,8 @@ export class WebWorkerOrchestratedRenderer<
         {
           renderMode: options.renderMode,
           profiling: {
-            onRendererStatsUpdated: (renderingStats: RenderingStats) => {
-              console.log("updating stats");
-              // console.log("updating stats", index, this.workerRenderers.length);
-
-              if (index > this.orchestratedRenderers.length - 1) return;
-              this.updateStats(index, renderingStats);
-            },
+            onRendererStatsUpdated: (renderingStats: RenderingStats) =>
+              this.updateStats(index, renderingStats),
           },
         },
         rendererConstructor,
@@ -189,8 +184,6 @@ export class WebWorkerOrchestratedRenderer<
       const addCount =
         result.payloadSelectors.length - this.orchestratedRenderers.length;
 
-      console.log("adding ", addCount);
-
       for (let index = 0; index < addCount; index++) {
         const orchestratedRenderer = this.rendererFactory(
           this.orchestratedRenderers.length,
@@ -216,13 +209,13 @@ export class WebWorkerOrchestratedRenderer<
       const removeCount =
         this.orchestratedRenderers.length - result.payloadSelectors.length;
 
-      console.log("removing ", removeCount);
-
       for (let index = 0; index < removeCount; index++) {
         const orchestratedRenderer = this.orchestratedRenderers.pop();
         orchestratedRenderer?.renderer.dispose();
         orchestratedRenderer?.canvas.remove();
       }
+
+      this.notifyProfiler();
     }
 
     this.orchestratedRenderers.forEach(
@@ -306,10 +299,6 @@ const checkPerformance = <TRendererPyload>(
       (sum, r) => sum + r.totalRenderTime / r.framesCount,
       0
     ) / rendererStats.length;
-
-  //
-  //return { needsBalancing: false };
-  //
 
   if (averageFps < 5) {
     const newLength = rendererStats.length - 1;

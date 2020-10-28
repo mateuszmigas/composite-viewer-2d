@@ -170,7 +170,7 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
         Object.keys(this.eventListeners).forEach(key =>
           this.removeListener(key)
         );
-        //this.worker.terminate();
+        this.worker.terminate();
       },
     });
   }
@@ -276,8 +276,6 @@ export const exposeToProxy = (
                 renderScheduler,
                 new RenderingPerformanceMonitor(
                   stats => {
-                    //console.log("posting stats", renderer);
-
                     postWorkerMessage({
                       type: "renderingStats",
                       data: stats,
@@ -340,12 +338,13 @@ export const exposeToProxy = (
         }
         case "dispose": {
           const { type, id } = proxyEvent;
+
           renderer.dispose();
+
           postWorkerMessage({
             type,
             id,
           });
-          //(renderer as any) = undefined;
           break;
         }
         default:
