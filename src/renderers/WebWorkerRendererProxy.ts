@@ -1,3 +1,4 @@
+import { Patch } from "./../types/patch";
 import {
   RenderingPerformanceMonitor,
   RenderingStats,
@@ -108,6 +109,13 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
     this.postWorkerMessage({
       type: "render",
       data: [renderPayload],
+    });
+  }
+
+  renderPatches(renderPayloadPatches: Patch<unknown>[]): void {
+    this.postWorkerMessage({
+      type: "renderPatches",
+      data: [renderPayloadPatches],
     });
   }
 
@@ -307,6 +315,10 @@ export const exposeToProxy = (
         }
         case "render": {
           renderer.render(...proxyEvent.data);
+          break;
+        }
+        case "renderPatches": {
+          renderer.renderPatches(...proxyEvent.data);
           break;
         }
         case "pickObjects": {

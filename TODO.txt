@@ -1,15 +1,17 @@
-todo:
-- profiler text in canvas2s
+todo mvp:
+- profile and add render patch
 - refactor profiling options
+- refactor scheduler and remove continous
 - renderpatch restrictions for orchestrator
-- orchestrator with different kind of renderers
 - treejs plugin
 - pixijs plugin
 - react plugin
-- check if ww terminate is not called before dispose
-- render params in schedule renderer
 - full render/patch render
 - make file casing consistent
+
+future: 
+- render params in schedule renderer
+- orchestrator with different kind of renderers
 - add angular example
 - add vue example
 
@@ -27,8 +29,3 @@ profiling:
 remember:
 - each schedule render needs to invoke requestAnimationFrame otherwise
 it gets desynchronized (ww and mt)
-
-goals: 
-- zero (little) dependency
-- hack free
-- 99% strongly typed

@@ -71,6 +71,8 @@ export class MyCustomRenderer implements Renderer {
     this.scheduleRender();
   }
 
+  renderPatches(dupa: any) {}
+
   renderInt = () => {
     this.clearCanvas();
 

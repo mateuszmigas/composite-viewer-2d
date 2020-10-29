@@ -154,6 +154,7 @@ const createTimelineCanvas = (
   index: number
 ) => {
   const canvas = document.createElement("canvas");
+  canvas.style.border = "1px #9e9e9e7a solid";
   const width = 240;
   const height = 60;
   const statsHeight = 40;
@@ -215,7 +216,7 @@ const createTimelineCanvas = (
         x.renderingStats[index].averageFrameTime
       );
       context.fillText(
-        `Max: ${x.renderingStats[index].averageFrameTime.toFixed(2)}ms`,
+        `Avg: ${x.renderingStats[index].averageFrameTime.toFixed(2)}ms`,
         width / 2,
         fontSize
       );

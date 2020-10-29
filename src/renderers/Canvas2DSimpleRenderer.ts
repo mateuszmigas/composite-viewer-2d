@@ -1,6 +1,8 @@
+import { applyPatches } from "./../types/patch";
 import { hasPropertyInChain } from "../common/typeGuards";
 import { PickingOptions, PickingResult } from "../picking";
 import { Size, Rectangle } from "../types/geometry";
+import { Patch } from "../types/patch";
 import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
 import { Viewport } from "../types/viewport";
 import { GenericRender, Renderer } from "./Renderer";
@@ -10,6 +12,7 @@ type RenderPayload = {
   rectangles: RenderRectangleObject[];
   circles: RenderCircleObject[];
   layers: string;
+  executionTime: number;
 };
 
 export const randomInteger = (min: number, max: number) =>
@@ -73,11 +76,18 @@ export class Canvas2DSimpleRenderer implements GenericRender<RenderPayload> {
     this.scheduleRender();
   }
 
-  payload: any;
+  payload: RenderPayload | undefined;
 
-  render(renderPayload: RenderPayload): void {
+  render(renderPayload: RenderPayload) {
+    const now = Date.now() - renderPayload.executionTime;
+    console.log("now", now);
+
     this.payload = renderPayload;
     this.scheduleRender();
+  }
+
+  renderPatches(renderPayloadPatches: Patch<RenderPayload>[]) {
+    if (this.payload) applyPatches(this.payload, renderPayloadPatches);
   }
 
   renderInt = () => {

@@ -1,3 +1,4 @@
+import { timeStamp } from "console";
 import React from "react";
 import { generateRandomRectangles } from "./helpers";
 import {
@@ -18,6 +19,7 @@ interface Viewer2DHostState {}
 type MyRenderPayload = {
   someRectangles1: RenderRectangleObject[];
   someRectangles2: RenderRectangleObject[];
+  executionTime: number;
 };
 
 export const randomInteger = (min: number, max: number) =>
@@ -64,7 +66,10 @@ export class Viewer2DHost extends React.PureComponent<
     this.viewportManipulator = new ViewportManipulator(
       this.hostElement.current,
       initialViewport,
-      (newViewport: Viewport) => this.renderDispatcher.setViewport(newViewport)
+      (newViewport: Viewport) => {
+        this.renderDispatcher.setViewport(newViewport);
+        //this.fullRender();
+      }
     );
 
     //debug opnly
@@ -73,7 +78,7 @@ export class Viewer2DHost extends React.PureComponent<
 
     const factory = new RendererControllerFactory<MyRenderPayload>(
       {
-        renderMode: "continuous",
+        renderMode: "onDemand",
         profiling: {
           onRendererStatsUpdated: perfMonitorPanel.updateStats,
         },
@@ -82,34 +87,56 @@ export class Viewer2DHost extends React.PureComponent<
     );
 
     const rendererControllers = [
-      factory.create(
+      // factory.create(
+      //   "Canvas_2D_1",
+      //   Canvas2DSimpleRenderer,
+      //   [this.createCanvas(101)],
+      //   payload => ({
+      //     rectangles: payload.someRectangles1,
+      //     //executionTime
+      //   }),
+      //   true
+      // ),
+      // factory.createOrchestratedOffscreenIfAvailable(
+      //   "Canvas_2D_3",
+      //   Canvas2DSimpleRenderer,
+      //   [],
+      //   index => this.createCanvas(200 + index),
+      //   payload => ({
+      //     rectangles: payload.someRectangles2,
+      //   }),
+      //   {
+      //     balancedFields: ["rectangles"],
+      //     // frameTimeTresholds: {
+      //     //   tooSlow: 16,
+      //     //   tooFast: 5
+      //     // },
+      //     //initialExecutors:
+      //     minExecutors: 1,
+      //     maxExecutors: 4,
+      //     frequency: 4000,
+      //   },
+      //   true
+      // ),
+      // mapping:
+
+      //     payloadProps:
+      // {
+      //   prop: "aaa", value: { esfesf},
+      //   prop: "fsfs", payload: "fsef"
+      // }
+
+      // payload =>
+      // renderPatch =>
+
+      factory.createOffscreenIfAvailable(
         "Canvas_2D_2",
         Canvas2DSimpleRenderer,
-        [this.createCanvas(101)],
-        payload => ({
-          rectangles: payload.someRectangles1,
-        }),
-        true
-      ),
-      factory.createOrchestratedOffscreenIfAvailable(
-        "Canvas_2D_3",
-        Canvas2DSimpleRenderer,
-        [],
-        index => this.createCanvas(200 + index),
+        [this.createCanvas(200)],
         payload => ({
           rectangles: payload.someRectangles2,
+          executionTime: payload.executionTime,
         }),
-        {
-          balancedFields: ["rectangles"],
-          // frameTimeTresholds: {
-          //   tooSlow: 16,
-          //   tooFast: 5
-          // },
-          //initialExecutors:
-          minExecutors: 1,
-          maxExecutors: 4,
-          frequency: 4000,
-        },
         true
       ),
     ];
@@ -124,12 +151,24 @@ export class Viewer2DHost extends React.PureComponent<
     this.renderDispatcher.setViewport(initialViewport);
   }
 
+  private addItem = () => {
+    this.renderDispatcher.renderPatches([
+      {
+        path: "someRectangles1",
+        op: "add",
+        values: generateRandomRectangles(1),
+      },
+    ]);
+  };
+
   private createCanvas(zIndex: number) {
     if (this.hostElement.current === null) throw new Error("fs");
     return createCanvasElement(this.hostElement.current, zIndex);
   }
 
   private fullRender = () => {
+    const newLocal = generateRandomRectangles(100);
+    const newLocal_1 = Date.now();
     this.renderDispatcher.render({
       // someRectangles1: [
       //   {
@@ -142,8 +181,9 @@ export class Viewer2DHost extends React.PureComponent<
       //     color: randomColor(),
       //   },
       // ],
-      someRectangles1: generateRandomRectangles(15000),
-      someRectangles2: generateRandomRectangles(12000),
+      someRectangles1: generateRandomRectangles(1),
+      someRectangles2: newLocal,
+      executionTime: newLocal_1,
       // someRectangles2: [
       //   {
       //     type: "Rectangle",

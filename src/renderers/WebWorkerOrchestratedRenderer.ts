@@ -1,3 +1,4 @@
+import { applyPatches } from "./../types/patch";
 import { Nullable } from "./../types/common";
 import { createIndexArray } from "./../common/arrayExtensions";
 import { WebWorkerRendererProxy } from "./WebWorkerRendererProxy";
@@ -7,6 +8,8 @@ import { PickingOptions, PickingResult } from "../picking";
 import { RenderMode, Serializable, Size, Viewport } from "../types";
 import { BalancerField, RenderBalancerOptions } from "./RenderingBalancer";
 import { ProxyRenderer } from "../types/proxy";
+import { Patch } from "../types/patch";
+import { hasProperty } from "../common/typeGuards";
 
 type OrchestratingRendererOptions<TRendererPayload> = {
   renderMode: RenderMode;
@@ -44,7 +47,7 @@ type PerformanceCheckResult<TRendererPayload> =
     };
 
 type OrchestratedRenderer<TRendererPayload> = {
-  readonly renderer: Renderer;
+  readonly renderer: GenericRender<TRendererPayload>;
   readonly canvas: HTMLCanvasElement;
   payloadSelector: (payload: TRendererPayload) => unknown;
   profilerStats: PerformanceStats | null;
@@ -127,7 +130,20 @@ export class WebWorkerOrchestratedRenderer<
   render(renderPayload: TRendererPayload): void {
     this.stateToReplicate.renderPayload = renderPayload;
     this.orchestratedRenderers.forEach(r =>
-      r.renderer.render(r.payloadSelector(renderPayload))
+      r.renderer.render(r.payloadSelector(renderPayload) as TRendererPayload)
+    );
+  }
+
+  renderPatches(renderPayloadPatches: Patch<TRendererPayload>[]): void {
+    if (!this.stateToReplicate.renderPayload) return;
+
+    applyPatches(this.stateToReplicate.renderPayload, renderPayloadPatches);
+    this.orchestratedRenderers.forEach((r, index) =>
+      r.renderer.renderPatches(
+        index !== 0
+          ? this.patchesExceptAdd(renderPayloadPatches)
+          : renderPayloadPatches
+      )
     );
   }
 
@@ -156,6 +172,12 @@ export class WebWorkerOrchestratedRenderer<
   dispose(): void {
     clearInterval(this.balancerTimerHandler);
     this.forEachRenderer(r => r.dispose());
+  }
+
+  private patchesExceptAdd(renderPayloadPatches: Patch<TRendererPayload>[]) {
+    return renderPayloadPatches.filter(
+      rp => !hasProperty(rp, "op") || rp.op !== "add"
+    );
   }
 
   private rerender() {

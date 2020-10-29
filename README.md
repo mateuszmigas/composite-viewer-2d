@@ -36,6 +36,19 @@ graph here
 
 Implement GenericRenderer interface
 
+## render vs renderPatch
+
+For your data to be delivered to webworker it first needs to be "serialized" so it can go through "postMessage". Passing entire render object every time something small changed is obviously an overkill and will not scale well. To address that there is a companion method "renderPatch" which contains only "changes"
+
+The idea is as follows:
+First render - render
+Everything/almost everything changed - render
+Small changes, like moving few objects - patchRender
+
+"renderPatch" also allows you to implement some more cleaver optimizations much easier. You know exacly which part of your render data changed so you can rerender
+only portion of the screen
+(example here)
+
 ## RenderScheduler
 
 When rendering with multiple renderers in main thread and webworkers you may or may not want to synchronize stuff:
@@ -44,6 +57,8 @@ When rendering with multiple renderers in main thread and webworkers you may or 
 | ----------------- | ---------------------------------------------------------------------------- |
 | `instantRenderer` | Initial values for part of the state that will be controlled by the hook     |
 | `rafScheduler`    | Current values of part of the state that will be controlled by the Component |
+
+Keep in mind this is optimistic synchronization, it will work for workers and main thread that meet the budget and they will not wait for others that are not.
 
 ## Offscreen rendering requirements
 
