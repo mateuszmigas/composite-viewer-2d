@@ -12,6 +12,7 @@ import {
   Patch,
 } from "./viewer2d";
 import * as THREE from "three";
+import { LogLuvEncoding } from "three";
 
 type ThreeJsRendererPayload = {
   rectangles: RenderRectangleObject[];
@@ -20,12 +21,8 @@ type ThreeJsRendererPayload = {
 export class ThreeJsRendererer implements Renderer<ThreeJsRendererPayload> {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
-  private camera = new THREE.PerspectiveCamera(
-    75, // Field of View
-    window.innerWidth / window.innerHeight, // aspect ratio
-    0.1, // near clipping plane
-    1000 // far clipping plane
-  );
+  private camera = new THREE.OrthographicCamera(0, 0, 0, 0, -1000, 1000);
+  private geometry = new THREE.BoxBufferGeometry(100, 100, 100);
   private size: Size = { width: 0, height: 0 };
   private isVisible = true;
   private viewport: Viewport = { position: { x: 0, y: 0 }, zoom: 1 };
@@ -40,12 +37,6 @@ export class ThreeJsRendererer implements Renderer<ThreeJsRendererPayload> {
       antialias: false,
       alpha: true,
     });
-
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshNormalMaterial();
-    const cube = new THREE.Mesh(geometry, material);
-    this.scene.add(cube);
-    this.camera.position.z = 5; // move camera back so we can see the cube
 
     this.scheduleRender = () => {
       if (this.payload && this.isVisible) renderScheduler(this.renderInt);
@@ -66,23 +57,61 @@ export class ThreeJsRendererer implements Renderer<ThreeJsRendererPayload> {
     console.log("settingsize", this.size);
 
     this.renderer.setSize(this.size.width, this.size.height, false);
+    this.updateSceneCamera();
     this.scheduleRender();
   }
 
   setViewport(viewport: Viewport) {
     this.viewport = { ...viewport };
 
+    this.updateSceneCamera();
     this.scheduleRender();
   }
 
   payload: any;
 
   render(renderPayload: ThreeJsRendererPayload) {
+    this.scene.clear();
     this.payload = renderPayload;
+
+    if (renderPayload.rectangles) {
+      renderPayload.rectangles.forEach(rectangle => {
+        const object = new THREE.Mesh(
+          this.geometry,
+          new THREE.MeshBasicMaterial({
+            color: new THREE.Color(
+              rectangle.color.r / 256,
+              rectangle.color.g / 256,
+              rectangle.color.b / 256
+            ),
+          })
+        );
+
+        object.position.x = 50 + rectangle.x;
+        object.position.y = -rectangle.y;
+        object.position.z = 1;
+        object.scale.x = 1;
+        object.scale.y = 1;
+        object.scale.z = 0.5;
+        this.scene.add(object);
+      });
+    }
+
     this.scheduleRender();
   }
 
-  renderPatches(renderPayloadPatches: any) {}
+  private updateSceneCamera() {
+    const zoomFactor = 1 / this.viewport.zoom;
+    this.camera.left = -this.viewport.position.x * zoomFactor;
+    this.camera.right = this.camera.left + this.size.width * zoomFactor;
+    this.camera.top = this.viewport.position.y * zoomFactor;
+    this.camera.bottom = this.camera.top - this.size.height * zoomFactor;
+    this.camera.updateProjectionMatrix();
+  }
+
+  renderPatches(renderPayloadPatches: any) {
+    //todo
+  }
 
   renderInt = () => {
     this.clearCanvas();

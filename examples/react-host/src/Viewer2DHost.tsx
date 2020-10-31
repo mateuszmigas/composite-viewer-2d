@@ -90,7 +90,7 @@ export class Viewer2DHost extends React.PureComponent<
       canvas2d2: factory.create(
         Canvas2DSimpleRenderer,
         [this.createCanvas(101)],
-        false
+        true
       ),
       threejs: factory.create(
         ThreeJsRendererer,
@@ -137,16 +137,17 @@ export class Viewer2DHost extends React.PureComponent<
   }
 
   private fullRender = () => {
+    const rectangles = generateRandomRectangles(19);
     this.renderDispatcher.render({
       canvas2d2: {
-        rectangles: generateRandomRectangles(1),
+        rectangles: rectangles,
         circles: [],
         layers: "Esf",
         executionTime: 12,
         // cycki: () => "fe",
       },
       threejs: {
-        rectangles: generateRandomRectangles(19),
+        rectangles: rectangles,
       },
       // canvas2dOffscreen: {
       //   rectangles: generateRandomRectangles(1),
