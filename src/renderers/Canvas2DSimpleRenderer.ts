@@ -34,7 +34,9 @@ export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
   private size: Size = { width: 0, height: 0 };
   private viewport: Viewport = { position: { x: 0, y: 0 }, zoom: 1 };
   private isVisible = true;
-  scheduleRender: () => void;
+  private payload: CanRenderPayload | null = null;
+  private scheduleRender: () => void;
+
   color = randomColor();
 
   constructor(
@@ -49,7 +51,7 @@ export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
     this.canvasContext.globalCompositeOperation = "destination-over"; //todo check performance
 
     this.scheduleRender = () => {
-      if (this.payload && this.isVisible) renderScheduler(this.renderInt);
+      if (this.payload && this.isVisible) renderScheduler(this.renderInternal);
     };
   }
 
@@ -76,8 +78,6 @@ export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
     this.scheduleRender();
   }
 
-  payload: CanRenderPayload | undefined;
-
   render(renderPayload: CanRenderPayload) {
     const now = Date.now() - renderPayload.executionTime;
     console.log("now", now);
@@ -94,7 +94,7 @@ export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
     }
   }
 
-  renderInt = () => {
+  renderInternal = () => {
     this.clearCanvas();
 
     if (!this.payload) return;

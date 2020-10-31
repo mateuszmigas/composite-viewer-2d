@@ -12,12 +12,6 @@ import {
   Patchers,
 } from "./viewer2d";
 
-interface Viewer2DHostProps {}
-interface Viewer2DHostState {}
-
-export const randomInteger = (min: number, max: number) =>
-  Math.floor(Math.random() * (max - min + 1) + min);
-
 const createCanvasWorker = (name: string) =>
   new Worker("./renderWorker.template.ts", {
     type: "module",
@@ -33,15 +27,12 @@ type SuperViewerRenderers = {
 
 //type SuperViewerPatches = Patchers<SuperViewerRenderers>;
 
-export class Viewer2DHost extends React.PureComponent<
-  Viewer2DHostProps,
-  Viewer2DHostState
-> {
+export class Viewer2DHost extends React.PureComponent<{}, {}> {
   hostElement: React.RefObject<HTMLDivElement>;
   renderDispatcher!: RenderDispatcher<SuperViewerRenderers>;
   viewportManipulator!: ViewportManipulator;
 
-  constructor(props: Viewer2DHostProps) {
+  constructor(props: {}) {
     super(props);
     this.hostElement = React.createRef();
     this.state = {};
@@ -61,10 +52,7 @@ export class Viewer2DHost extends React.PureComponent<
     this.viewportManipulator = new ViewportManipulator(
       this.hostElement.current,
       initialViewport,
-      (newViewport: Viewport) => {
-        this.renderDispatcher.setViewport(newViewport);
-        //this.fullRender();
-      }
+      (newViewport: Viewport) => this.renderDispatcher.setViewport(newViewport)
     );
 
     //debug opnly
@@ -81,11 +69,6 @@ export class Viewer2DHost extends React.PureComponent<
       createCanvasWorker
     );
 
-    // const aaaa = factory.createOffscreenIfAvailable(
-    //   Canvas2DSimpleRenderer,
-    //   [this.createCanvas(200)],
-    //   true
-    // );
     const rendererControllers = {
       canvas2d2: factory.create(
         Canvas2DSimpleRenderer,
@@ -97,13 +80,8 @@ export class Viewer2DHost extends React.PureComponent<
         [this.createCanvas(102)],
         true
       ),
-      // canvas2dOffscreen: factory.createOffscreenIfAvailable(
-      //   Canvas2DSimpleRenderer,
-      //   [this.createCanvas(200)],
-      //   true
-      // ),
-      // canvas2dOrchestrator: factory.createOrchestratedOffscreenIfAvailable(
-      //   Canvas2DSimpleRenderer,
+      // threejs: factory.createOrchestratedOffscreenIfAvailable(
+      //   ThreeJsRendererer,
       //   [],
       //   index => this.createCanvas(200 + index),
       //   {
@@ -137,7 +115,7 @@ export class Viewer2DHost extends React.PureComponent<
   }
 
   private fullRender = () => {
-    const rectangles = generateRandomRectangles(19);
+    const rectangles = generateRandomRectangles(10);
     this.renderDispatcher.render({
       canvas2d2: {
         rectangles: rectangles,
@@ -192,17 +170,20 @@ export class Viewer2DHost extends React.PureComponent<
           onClick={() => {
             console.log("clicked");
 
+            // const newRectangles = generateRandomRectangles(0);
             // this.renderDispatcher.renderPatches({
-            //   canvas2dOffscreen: [
+            //   canvas2d2: [
             //     {
-            //       path: "layers",
-            //       value: "2",
+            //       path: "rectangles",
+            //       op: "add",
+            //       values: [],
             //     },
             //   ],
-            //   canvas2dOrchestrator: [
+            //   threejs: [
             //     {
-            //       path: "layers",
-            //       value: "2",
+            //       path: "rectangles",
+            //       op: "add",
+            //       values: newRectangles,
             //     },
             //   ],
             // });
