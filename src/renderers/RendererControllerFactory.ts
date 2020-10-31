@@ -1,4 +1,9 @@
-import { ArrayFieldsOnly, FilterByType, RenderMode } from "../types/common";
+import {
+  ArrayFieldsOnly,
+  FilterByType,
+  RenderMode,
+  ValueOf,
+} from "../types/common";
 import {
   RenderingPerformanceMonitor,
   RenderingStats,
@@ -18,7 +23,34 @@ import { isOffscreenCanvasSupported } from "../utils/dom";
 import { WebWorkerOrchestratedRenderer } from "./WebWorkerOrchestratedRenderer";
 import { RendererExecutionEnvironment } from "./RendererExecutionEnvironment";
 
-export class RendererControllerFactory<TPayload> {
+// type Target = {
+//   names: string[];
+//   //users: { firstName: number; isActive: boolean };
+//   optionalLayer?: string;
+// };
+
+// type Source = {
+//   someNames: string[];
+//   someUsers: { firstName: number; isActive: boolean };
+// };
+
+// type PayloadMap<Source, Target> = ValueOf<
+//   {
+//     [P in keyof Source]: Source[P] extends Target[infer C]
+//       ? { path: P; payloadPath: string }
+//       : never;
+//   }
+// >;
+
+// type CCC = PayloadMap<Source, Target>;
+// export const xxx: CCC = {
+//   path: "someNames",
+//   payloadPath: "names",
+// };
+
+// console.log(xxx);
+
+export class RendererControllerFactory {
   renderSchedulerFactory: (rendererId: string) => RenderScheduler;
 
   constructor(
@@ -65,16 +97,14 @@ export class RendererControllerFactory<TPayload> {
       ): GenericRender<TRendererPayload>;
     },
     contructorParams: TParams,
-    payloadSelector: (payload: TPayload) => TRendererPayload,
     enabled: boolean
-  ): RendererController<TPayload> {
-    const controller: RendererController<TPayload> = {
+  ): RendererController<TRendererPayload> {
+    const controller: RendererController<TRendererPayload> = {
       id,
       renderer: new contructorFunction(
         this.renderSchedulerFactory(id),
         ...contructorParams
       ),
-      payloadSelector,
       enabled,
       executionEnvironment: { type: "mainThread" },
     };
@@ -87,9 +117,8 @@ export class RendererControllerFactory<TPayload> {
     id: string,
     contructorFunction: ProxyRenderer<TRendererPayload, TParams>,
     contructorParams: [HTMLCanvasElement, ...Serializable<TParams>],
-    payloadSelector: (payload: TPayload) => TRendererPayload,
     enabled: boolean
-  ): RendererController<TPayload> {
+  ): RendererController<TRendererPayload> {
     const [renderer, executionEnvironment] = isOffscreenCanvasSupported()
       ? [
           new WebWorkerRendererProxy(
@@ -127,10 +156,9 @@ export class RendererControllerFactory<TPayload> {
           ,
         ];
 
-    const controller: RendererController<TPayload> = {
+    const controller: RendererController<TRendererPayload> = {
       id,
       renderer,
-      payloadSelector,
       enabled,
       executionEnvironment,
     };
@@ -147,10 +175,9 @@ export class RendererControllerFactory<TPayload> {
     contructorFunction: ProxyRenderer<TRendererPayload, TParams>,
     contructorParams: Serializable<TParams>,
     canvasFactory: (index: number) => HTMLCanvasElement,
-    payloadSelector: (payload: TPayload) => TRendererPayload,
     balancerOptions: RenderBalancerOptions<TRendererPayload>,
     enabled: boolean
-  ): RendererController<TPayload> {
+  ): RendererController<TRendererPayload> {
     const renderer = isOffscreenCanvasSupported()
       ? new WebWorkerOrchestratedRenderer(
           index => {
@@ -184,10 +211,9 @@ export class RendererControllerFactory<TPayload> {
           ...contructorParams
         );
 
-    const controller: RendererController<TPayload> = {
+    const controller: RendererController<TRendererPayload> = {
       id,
       renderer,
-      payloadSelector,
       enabled,
       executionEnvironment: isOffscreenCanvasSupported()
         ? ({

@@ -32,11 +32,13 @@ export const applyPatches = <T>(object: T, patches: Patch<T>[]) => {
 
       switch (patchArray.op) {
         case "add": {
-          array.push(patchArray.values);
+          array.push(...patchArray.values);
           break;
         }
         case "remove": {
-          patchArray.indexes.forEach(i => array.splice(i, 1));
+          patchArray.indexes
+            .sort((left, right) => right - left)
+            .forEach(i => array.splice(i, 1));
           break;
         }
         case "replace":

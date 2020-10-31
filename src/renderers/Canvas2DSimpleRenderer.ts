@@ -8,7 +8,7 @@ import { Viewport } from "../types/viewport";
 import { GenericRender, Renderer } from "./Renderer";
 import { RenderScheduler } from "./RenderScheduler";
 
-type RenderPayload = {
+type CanRenderPayload = {
   rectangles: RenderRectangleObject[];
   circles: RenderCircleObject[];
   layers: string;
@@ -26,7 +26,7 @@ const randomColor = () => {
   };
 };
 
-export class Canvas2DSimpleRenderer implements GenericRender<RenderPayload> {
+export class Canvas2DSimpleRenderer implements GenericRender<CanRenderPayload> {
   private canvasContext:
     | CanvasRenderingContext2D
     | OffscreenCanvasRenderingContext2D;
@@ -76,9 +76,9 @@ export class Canvas2DSimpleRenderer implements GenericRender<RenderPayload> {
     this.scheduleRender();
   }
 
-  payload: RenderPayload | undefined;
+  payload: CanRenderPayload | undefined;
 
-  render(renderPayload: RenderPayload) {
+  render(renderPayload: CanRenderPayload) {
     const now = Date.now() - renderPayload.executionTime;
     console.log("now", now);
 
@@ -86,8 +86,12 @@ export class Canvas2DSimpleRenderer implements GenericRender<RenderPayload> {
     this.scheduleRender();
   }
 
-  renderPatches(renderPayloadPatches: Patch<RenderPayload>[]) {
-    if (this.payload) applyPatches(this.payload, renderPayloadPatches);
+  renderPatches(renderPayloadPatches: Patch<CanRenderPayload>[]) {
+    console.log("patches", renderPayloadPatches, this.payload);
+    if (this.payload) {
+      applyPatches(this.payload, renderPayloadPatches);
+      this.scheduleRender();
+    }
   }
 
   renderInt = () => {

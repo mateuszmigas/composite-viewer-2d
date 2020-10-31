@@ -5,14 +5,36 @@ import { RendererController } from "./RendererController";
 import { Viewport } from "../types/viewport";
 import { observeElementBoundingRect } from "../utils/dom";
 import { Patch } from "../types/patch";
+import { GenericRender } from "./Renderer";
 
-export class RenderDispatcher<TRenderPayload> {
+type RendererTypesToPatchPayloads<T> = {
+  [K in keyof T]?: T[K] extends RendererController<infer P>
+    ? Patch<P>[]
+    : never;
+};
+
+type RendererTypesToPayloads<T> = {
+  [K in keyof T]?: T[K] extends RendererController<infer R> ? R : never;
+};
+
+type RendererTypesToControllers<T> = {
+  [K in keyof T]: T[K] extends GenericRender<infer R>
+    ? RendererController<R>
+    : never;
+};
+
+export class RenderDispatcher<
+  TRendererTypes extends { [key: string]: GenericRender<any> },
+  TRendererControllers = RendererTypesToControllers<TRendererTypes>,
+  TRendererPayloads = RendererTypesToPayloads<TRendererControllers>,
+  TRendererPatchPayloads = RendererTypesToPatchPayloads<TRendererControllers>
+> {
   isReady = false;
   resizeObserveUnsubscribe: Unsubscribe;
 
   constructor(
     hostElement: HTMLElement,
-    private renderers: RendererController<TRenderPayload>[],
+    private renderers: TRendererControllers,
     private onReadyToRender: () => void
   ) {
     this.resizeObserveUnsubscribe = observeElementBoundingRect(
@@ -22,40 +44,41 @@ export class RenderDispatcher<TRenderPayload> {
   }
 
   setViewport(viewport: Viewport) {
-    this.renderers.forEach(r => r.renderer.setViewport(viewport));
+    this.getRenders().forEach(r => r.setViewport(viewport));
   }
 
-  render(renderPayload: TRenderPayload) {
-    this.renderers.forEach(r =>
-      r.renderer.render(
-        r.payloadSelector(renderPayload) as Partial<TRenderPayload>
-      )
-    );
+  render(renderPayload: TRendererPayloads) {
+    Object.entries(this.renderers).forEach(([name, value]) => {
+      const payload = (renderPayload as any)[name];
+      if (payload) value.renderer.render(payload);
+    });
   }
 
-  renderPatches(renderPayloadPatches: Patch<TRenderPayload>[]) {
-    //this.renderers.forEach(r => r.renderer.renderPatches)
-    // this.renderers.forEach(r =>
-    //   r.renderer.render(
-    //     r.payloadSelector(renderPayload) as Partial<TRenderPayload>
-    //   )
-    // );
+  renderPatches(renderPayloadPatches: TRendererPatchPayloads) {
+    Object.entries(this.renderers).forEach(([name, value]) => {
+      const patches = (renderPayloadPatches as any)[name];
+      if (patches) value.renderer.renderPatches(patches);
+    });
   }
 
   async pickObjects(options: PickingOptions): Promise<PickingResult[]> {
     const result = await Promise.all(
-      this.renderers.map(r => r.renderer.pickObjects(options))
+      this.getRenders().map(r => r.pickObjects(options))
     );
     return result.flat();
   }
 
   dispose() {
     this.resizeObserveUnsubscribe();
-    this.renderers.forEach(s => s.renderer.dispose());
+    this.getRenders().forEach(r => r.dispose());
+  }
+
+  private getRenders() {
+    return Object.values(this.renderers).map(v => v.renderer);
   }
 
   private resize(size: Size) {
-    this.renderers.forEach(s => s.renderer.setSize(size));
+    this.getRenders().forEach(r => r.setSize(size));
 
     //first resize
     if (!this.isReady) {
