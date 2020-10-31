@@ -1,36 +1,33 @@
 import { RenderMode } from "./../types/common";
 import { RenderingPerformanceMonitor } from "./RenderingPerformanceMonitor";
 
-export type RenderScheduler = (renderCallback: () => void) => void;
+export type RenderScheduler = (renderCallback: (time: number) => void) => void;
 
 export const createOnDemandRAFRenderScheduler = (): RenderScheduler => (
-  renderCallback: () => void
+  renderCallback: (time: number) => void
 ) => requestAnimationFrame(renderCallback);
 
 export const createContinuousRenderScheduler = (): RenderScheduler => {
-  let callback: () => void;
+  let callback: (time: number) => void;
 
-  function renderLoop() {
-    callback?.();
+  function renderLoop(time: number) {
+    callback?.(time);
     requestAnimationFrame(renderLoop);
   }
 
   requestAnimationFrame(renderLoop);
 
-  return (renderCallback: () => void) => (callback = renderCallback);
+  return (renderCallback: (time: number) => void) =>
+    (callback = renderCallback);
 };
-
-export const createOnDemandImmediateRenderScheduler = (): RenderScheduler => (
-  renderCallback: () => void
-) => renderCallback();
 
 export const enhanceWithProfiler = (
   scheduler: RenderScheduler,
   performanceMonitor: RenderingPerformanceMonitor
-): RenderScheduler => (renderCallback: () => void) =>
-  scheduler(() => {
+): RenderScheduler => (renderCallback: (time: number) => void) =>
+  scheduler((time: number) => {
     performanceMonitor?.start();
-    renderCallback();
+    renderCallback(time);
     performanceMonitor?.end();
   });
 

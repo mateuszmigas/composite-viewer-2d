@@ -103,7 +103,7 @@ export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
     const { x: xOffset, y: yOffset } = this.viewport.position;
 
     if (this.payload.rectangles) {
-      this.payload.rectangles.forEach((rectangle: any) => {
+      this.payload.rectangles.forEach(rectangle => {
         this.canvasContext.fillStyle = `rgb(
             ${rectangle.color.r},
             ${rectangle.color.g},

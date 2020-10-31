@@ -1,5 +1,6 @@
 import * as PIXI from "pixi.js";
 import {
+  applyPatches,
   Patch,
   PickingOptions,
   PickingResult,
@@ -16,6 +17,8 @@ type PixijsRendererPayload = {
 };
 
 export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
+  private application: PIXI.Application;
+  private graphics: PIXI.Graphics;
   private size: Size = { width: 0, height: 0 };
   private viewport: Viewport = { position: { x: 0, y: 0 }, zoom: 1 };
   private isVisible = true;
@@ -26,17 +29,15 @@ export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
     renderScheduler: RenderScheduler,
     private element: HTMLDivElement
   ) {
-    const app = new PIXI.Application({ transparent: true });
+    this.application = new PIXI.Application({
+      transparent: true,
+      autoStart: false,
+    });
 
-    element.appendChild(app.view);
+    element.appendChild(this.application.view);
 
-    const graphics = new PIXI.Graphics();
-
-    // Rectangle
-    graphics.beginFill(0xde3249);
-    graphics.drawRect(250, 250, 100, 100);
-    graphics.endFill();
-    app.stage.addChild(graphics);
+    this.graphics = new PIXI.Graphics();
+    this.application.stage.addChild(this.graphics);
 
     this.scheduleRender = () => {
       if (this.payload && this.isVisible) renderScheduler(this.renderInternal);
@@ -44,16 +45,13 @@ export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
   }
 
   setVisibility(visible: boolean) {
-    // this.isVisible = visible;
-    // if (hasPropertyInChain(this.canvas, "style"))
-    //   this.canvas.style.visibility = visible ? "visible" : "collapse";
-    // this.scheduleRender();
+    this.isVisible = visible;
+    this.element.style.visibility = visible ? "visible" : "collapse";
   }
 
-  //todo canvas left
   setSize(size: Rectangle): void {
     this.size = { width: size.width, height: size.height };
-    this.scheduleRender();
+    this.application.renderer.resize(this.size.width, this.size.height);
   }
 
   setViewport(viewport: Viewport) {
@@ -62,55 +60,38 @@ export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
   }
 
   render(payload: PixijsRendererPayload) {
-    // const now = Date.now() - payload.executionTime;
-    // console.log("now", now);
-    // this.payload = payload;
-    // this.scheduleRender();
+    this.payload = payload;
+    this.scheduleRender();
   }
 
   renderPatches(payloadPatches: Patch<PixijsRendererPayload>[]) {
-    // console.log("patches", payloadPatches, this.payload);
-    // if (this.payload) {
-    //   applyPatches(this.payload, payloadPatches);
-    //   this.scheduleRender();
-    // }
+    if (this.payload) {
+      applyPatches(this.payload, payloadPatches);
+      this.scheduleRender();
+    }
   }
 
-  renderInternal = () => {
-    //this.clearCanvas();
-
+  renderInternal = (time: number) => {
     if (!this.payload) return;
 
-    // const zoom = this.viewport.zoom;
-    // const { x: xOffset, y: yOffset } = this.viewport.position;
+    this.graphics.clear();
+    const zoom = this.viewport.zoom;
+    const { x: xOffset, y: yOffset } = this.viewport.position;
 
-    // if (this.payload.rectangles) {
-    //   this.payload.rectangles.forEach((rectangle: any) => {
-    //     this.canvasContext.fillStyle = `rgb(
-    //         ${rectangle.color.r},
-    //         ${rectangle.color.g},
-    //         ${rectangle.color.b})`;
-    //     this.canvasContext.fillRect(
-    //       ~~(xOffset + rectangle.x * zoom),
-    //       ~~(yOffset + rectangle.y * zoom),
-    //       ~~(rectangle.width * zoom),
-    //       ~~(rectangle.height * zoom)
-    //     );
-    //   });
-    // }
+    if (this.payload.rectangles) {
+      this.payload.rectangles.forEach(rectangle => {
+        this.graphics.beginFill(0xde3249);
+        this.graphics.drawRect(
+          ~~(xOffset + rectangle.x * zoom),
+          ~~(yOffset + rectangle.y * zoom),
+          ~~(rectangle.width * zoom),
+          ~~(rectangle.height * zoom)
+        );
+        this.graphics.endFill();
+      });
+    }
 
-    // if (this.payload.circles) {
-    //   //todo
-    //   this.canvasContext.beginPath();
-    //   this.payload.circles.forEach((circle: any) => {
-    //     const x = ~~(xOffset + circle.x * zoom);
-    //     const y = ~~(yOffset + circle.y * zoom);
-    //     this.canvasContext.moveTo(x, y);
-    //     this.canvasContext.arc(x, y, 10, 0, Math.PI * 2);
-    //   });
-    //   this.canvasContext.fillStyle = "black";
-    //   this.canvasContext.fill();
-    // }
+    this.application.renderer.render(this.application.stage);
   };
 
   pickObjects(options: PickingOptions): Promise<PickingResult[]> {

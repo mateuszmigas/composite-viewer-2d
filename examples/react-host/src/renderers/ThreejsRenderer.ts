@@ -145,7 +145,7 @@ export class ThreeJsRendererer implements Renderer<ThreeJsRendererPayload> {
     );
 
     object.position.x = rectangle.x + rectangle.width / 2;
-    object.position.y = -rectangle.y - rectangle.height / 2;
+    object.position.y = 100 - rectangle.y - rectangle.height / 2;
     object.position.z = 1;
     object.scale.x = rectangle.width;
     object.scale.y = rectangle.height;

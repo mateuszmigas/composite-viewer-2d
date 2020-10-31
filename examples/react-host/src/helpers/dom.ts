@@ -15,7 +15,7 @@ export const createDivChild = (
 ): HTMLDivElement => {
   const div = document.createElement("div");
   div.style.zIndex = zIndex.toString();
-  div.style.position = "absolute"; //important for zIndex to work
+  div.style.position = "fixed"; //important for zIndex to work
   hostElement.appendChild(div);
   return div;
 };

@@ -1,3 +1,4 @@
+import { fail } from "assert";
 import React from "react";
 import { generateRandomRectangles } from "./helpers";
 import { createCanvasChild, createDivChild } from "./helpers/dom";
@@ -23,8 +24,6 @@ type SuperViewerRenderers = {
   threejs: ThreeJsRendererer;
   pixijs: PixijsRendererRenderer;
   canvas2d2: Canvas2DSimpleRenderer;
-  // canvas2dOffscreen: Canvas2DSimpleRenderer;
-  // canvas2dOrchestrator: Canvas2DSimpleRenderer;
 };
 
 //type SuperViewerPatches = Patchers<SuperViewerRenderers>;
@@ -57,7 +56,7 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
       (newViewport: Viewport) => this.renderDispatcher.setViewport(newViewport)
     );
 
-    //debug opnly
+    //debug only
     const perfMonitorPanel = new PerformanceMonitorPanel();
     this.hostElement.current.appendChild(perfMonitorPanel.getElement());
 
@@ -120,27 +119,18 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
     const rectangles = generateRandomRectangles(10);
     this.renderDispatcher.render({
       canvas2d2: {
-        rectangles: rectangles,
+        rectangles,
         circles: [],
         layers: "Esf",
         executionTime: 12,
         // cycki: () => "fe",
       },
       threejs: {
-        rectangles: rectangles,
+        rectangles,
       },
-      // canvas2dOffscreen: {
-      //   rectangles: generateRandomRectangles(1),
-      //   circles: [],
-      //   layers: "Esf",
-      //   executionTime: 12,
-      // },
-      // canvas2dOrchestrator: {
-      //   rectangles: generateRandomRectangles(10),
-      //   circles: [],
-      //   layers: "Esf",
-      //   executionTime: 12,
-      // },
+      pixijs: {
+        rectangles,
+      },
     });
 
     // this.renderDispatcher.renderPatches({
