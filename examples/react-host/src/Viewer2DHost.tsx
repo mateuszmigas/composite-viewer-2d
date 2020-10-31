@@ -38,6 +38,7 @@ const createCanvasWorker = (name: string) =>
 type RenderersTypes = {
   canvas2d2: Canvas2DSimpleRenderer;
   canvas2dOffscreen: Canvas2DSimpleRenderer;
+  canvas2dOrchestrator: Canvas2DSimpleRenderer;
 };
 
 export class Viewer2DHost extends React.PureComponent<
@@ -88,73 +89,38 @@ export class Viewer2DHost extends React.PureComponent<
       createCanvasWorker
     );
 
-    // factory.create(
-    //   "Canvas_2D_1",
-    //   Canvas2DSimpleRenderer,
-    //   [this.createCanvas(101)],
-    //   payload => ({
-    //     rectangles: payload.someRectangles1,
-    //     //executionTime
-    //   }),
-    //   true
-    // ),
-    // factory.createOrchestratedOffscreenIfAvailable(
-    //   "Canvas_2D_3",
-    //   Canvas2DSimpleRenderer,
-    //   [],
-    //   index => this.createCanvas(200 + index),
-    //   payload => ({
-    //     rectangles: payload.someRectangles2,
-    //   }),
-    //   {
-    //     balancedFields: ["rectangles"],
-    //     // frameTimeTresholds: {
-    //     //   tooSlow: 16,
-    //     //   tooFast: 5
-    //     // },
-    //     //initialExecutors:
-    //     minExecutors: 1,
-    //     maxExecutors: 4,
-    //     frequency: 4000,
-    //   },
-    //   true
-    // ),
-    // mapping:
-    //     payloadProps:
-    // {
-    //   prop: "aaa", value: { esfesf},
-    //   prop: "fsfs", payload: "fsef"
-    // }
-    // payload =>
-    // renderPatch =>
-    // canvas2d: factory.createOffscreenIfAvailable(
-    //   "Canvas_2D_2",
-    //   Canvas2DSimpleRenderer,
-    //   [this.createCanvas(200)],
-    //   payload => ({
-    //     rectangles: payload.someRectangles2,
-    //     executionTime: payload.executionTime,
-    //   }),
-    //   true
-    // ),
-
     const rendererControllers = {
       canvas2d2: factory.create(
-        "Canvas_2D_1",
         Canvas2DSimpleRenderer,
         [this.createCanvas(101)],
         true
       ),
       canvas2dOffscreen: factory.createOffscreenIfAvailable(
-        "Canvas_2D_2",
         Canvas2DSimpleRenderer,
         [this.createCanvas(200)],
         true
       ),
+      canvas2dOrchestrator: factory.createOrchestratedOffscreenIfAvailable(
+        Canvas2DSimpleRenderer,
+        [],
+        index => this.createCanvas(200 + index),
+        {
+          balancedFields: ["rectangles"],
+          // frameTimeTresholds: {
+          //   tooSlow: 16,
+          //   tooFast: 5
+          // },
+          //initialExecutors:
+          minExecutors: 1,
+          maxExecutors: 4,
+          frequency: 4000,
+        },
+        true
+      ),
     };
-    //perfMonitorPanel.addRenderers(rendererControllers);
+    perfMonitorPanel.addRenderers(rendererControllers);
 
-    this.renderDispatcher = new RenderDispatcher(
+    this.renderDispatcher = new RenderDispatcher<RenderersTypes>(
       this.hostElement.current,
       rendererControllers,
       this.fullRender
@@ -162,16 +128,6 @@ export class Viewer2DHost extends React.PureComponent<
 
     this.renderDispatcher.setViewport(initialViewport);
   }
-
-  // private addItem = () => {
-  //   this.renderDispatcher.renderPatches([
-  //     {
-  //       path: "someRectangles1",
-  //       op: "add",
-  //       values: generateRandomRectangles(1),
-  //     },
-  //   ]);
-  // };
 
   private createCanvas(zIndex: number) {
     if (this.hostElement.current === null) throw new Error("fs");
@@ -191,6 +147,12 @@ export class Viewer2DHost extends React.PureComponent<
       },
       canvas2dOffscreen: {
         rectangles: generateRandomRectangles(1),
+        circles: [],
+        layers: "Esf",
+        executionTime: 12,
+      },
+      canvas2dOrchestrator: {
+        rectangles: generateRandomRectangles(10),
         circles: [],
         layers: "Esf",
         executionTime: 12,
@@ -227,7 +189,7 @@ export class Viewer2DHost extends React.PureComponent<
             console.log("clicked");
 
             this.renderDispatcher.renderPatches({
-              canvas2d2: [
+              canvas2dOffscreen: [
                 {
                   path: "rectangles",
                   op: "add",
@@ -238,25 +200,7 @@ export class Viewer2DHost extends React.PureComponent<
           }}
           tabIndex={0}
           ref={this.hostElement}
-        >
-          <button
-            onClick={() => {
-              console.log("clicked");
-
-              this.renderDispatcher.renderPatches({
-                canvas2d2: [
-                  {
-                    path: "rectangles",
-                    op: "add",
-                    values: generateRandomRectangles(5),
-                  },
-                ],
-              });
-            }}
-          >
-            Cyc
-          </button>
-        </div>
+        ></div>
       </div>
     );
   }

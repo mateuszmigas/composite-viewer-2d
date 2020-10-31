@@ -54,9 +54,12 @@ export class PerformanceMonitorPanel {
     }
   };
 
-  addRenderers(rendererControllers: RendererController<any>[]) {
-    rendererControllers.forEach(rendererController => {
+  addRenderers(rendererControllers: {
+    [key: string]: RendererController<any>;
+  }) {
+    Object.entries(rendererControllers).forEach(([key, rendererController]) => {
       const element = createRendererPanel(
+        key,
         rendererController,
         this.statsObservable
       );
@@ -100,6 +103,7 @@ const createHeaderButton = () => {
 };
 
 const createRendererPanel = (
+  name: string,
   rendererController: RendererController<any>,
   stats: Observable<RendererStats>
 ) => {
@@ -114,7 +118,7 @@ const createRendererPanel = (
   divHeader.style.display = "flex";
   divHeader.style.justifyContent = "space-between";
   const idLabel = document.createElement("label");
-  idLabel.textContent = `${rendererController.id} - ${rendererController.executionEnvironment.type}`;
+  idLabel.textContent = `${name} - ${rendererController.executionEnvironment.type}`;
   divHeader.appendChild(idLabel);
   divHeader.appendChild(createEnableCheckbox(rendererController));
   divMain.appendChild(divHeader);
