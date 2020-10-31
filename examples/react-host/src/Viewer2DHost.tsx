@@ -1,8 +1,8 @@
 import React from "react";
 import { generateRandomRectangles } from "./helpers";
+import { ThreeJsRendererer } from "./ThreejsRenderer";
 import {
   Canvas2DSimpleRenderer,
-  Color,
   RenderDispatcher,
   Viewport,
   ViewportManipulator,
@@ -25,12 +25,13 @@ const createCanvasWorker = (name: string) =>
   });
 
 type SuperViewerRenderers = {
+  threejs: ThreeJsRendererer;
   canvas2d2: Canvas2DSimpleRenderer;
-  canvas2dOffscreen: Canvas2DSimpleRenderer;
-  canvas2dOrchestrator: Canvas2DSimpleRenderer;
+  // canvas2dOffscreen: Canvas2DSimpleRenderer;
+  // canvas2dOrchestrator: Canvas2DSimpleRenderer;
 };
 
-type SuperViewerPatches = Patchers<SuperViewerRenderers>;
+//type SuperViewerPatches = Patchers<SuperViewerRenderers>;
 
 export class Viewer2DHost extends React.PureComponent<
   Viewer2DHostProps,
@@ -80,39 +81,44 @@ export class Viewer2DHost extends React.PureComponent<
       createCanvasWorker
     );
 
-    const aaaa = factory.createOffscreenIfAvailable(
-      Canvas2DSimpleRenderer,
-      [this.createCanvas(200)],
-      true
-    );
+    // const aaaa = factory.createOffscreenIfAvailable(
+    //   Canvas2DSimpleRenderer,
+    //   [this.createCanvas(200)],
+    //   true
+    // );
     const rendererControllers = {
       canvas2d2: factory.create(
         Canvas2DSimpleRenderer,
         [this.createCanvas(101)],
+        false
+      ),
+      threejs: factory.create(
+        ThreeJsRendererer,
+        [this.createCanvas(102)],
         true
       ),
-      canvas2dOffscreen: factory.createOffscreenIfAvailable(
-        Canvas2DSimpleRenderer,
-        [this.createCanvas(200)],
-        true
-      ),
-      canvas2dOrchestrator: factory.createOrchestratedOffscreenIfAvailable(
-        Canvas2DSimpleRenderer,
-        [],
-        index => this.createCanvas(200 + index),
-        {
-          balancedFields: ["rectangles"],
-          // frameTimeTresholds: {
-          //   tooSlow: 16,
-          //   tooFast: 5
-          // },
-          //initialExecutors:
-          minExecutors: 1,
-          maxExecutors: 4,
-          frequency: 4000,
-        },
-        true
-      ),
+      // canvas2dOffscreen: factory.createOffscreenIfAvailable(
+      //   Canvas2DSimpleRenderer,
+      //   [this.createCanvas(200)],
+      //   true
+      // ),
+      // canvas2dOrchestrator: factory.createOrchestratedOffscreenIfAvailable(
+      //   Canvas2DSimpleRenderer,
+      //   [],
+      //   index => this.createCanvas(200 + index),
+      //   {
+      //     balancedFields: ["rectangles"],
+      //     // frameTimeTresholds: {
+      //     //   tooSlow: 16,
+      //     //   tooFast: 5
+      //     // },
+      //     //initialExecutors:
+      //     minExecutors: 1,
+      //     maxExecutors: 4,
+      //     frequency: 4000,
+      //   },
+      //   true
+      // ),
     };
     perfMonitorPanel.addRenderers(rendererControllers);
 
@@ -138,6 +144,9 @@ export class Viewer2DHost extends React.PureComponent<
         layers: "Esf",
         executionTime: 12,
         // cycki: () => "fe",
+      },
+      threejs: {
+        rectangles: generateRandomRectangles(19),
       },
       // canvas2dOffscreen: {
       //   rectangles: generateRandomRectangles(1),
@@ -182,20 +191,20 @@ export class Viewer2DHost extends React.PureComponent<
           onClick={() => {
             console.log("clicked");
 
-            this.renderDispatcher.renderPatches({
-              canvas2dOffscreen: [
-                {
-                  path: "layers",
-                  value: "2",
-                },
-              ],
-              canvas2dOrchestrator: [
-                {
-                  path: "layers",
-                  value: "2",
-                },
-              ],
-            });
+            // this.renderDispatcher.renderPatches({
+            //   canvas2dOffscreen: [
+            //     {
+            //       path: "layers",
+            //       value: "2",
+            //     },
+            //   ],
+            //   canvas2dOrchestrator: [
+            //     {
+            //       path: "layers",
+            //       value: "2",
+            //     },
+            //   ],
+            // });
           }}
           tabIndex={0}
           ref={this.hostElement}

@@ -126,7 +126,7 @@ export class RendererControllerFactory {
 
     const controller: RendererController<TRendererPayload> = {
       id,
-      renderer,
+      renderer: renderer as Renderer<TRendererPayload>,
       enabled,
       executionEnvironment,
     };
@@ -181,7 +181,7 @@ export class RendererControllerFactory {
 
     const controller: RendererController<TRendererPayload> = {
       id,
-      renderer,
+      renderer: renderer as Renderer<TRendererPayload>,
       enabled,
       executionEnvironment: isOffscreenCanvasSupported()
         ? ({

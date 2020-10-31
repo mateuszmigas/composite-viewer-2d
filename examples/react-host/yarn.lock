@@ -3613,13 +3613,6 @@ csstype@^3.0.2:
   resolved "https://registry.yarnpkg.com/csstype/-/csstype-3.0.3.tgz#2b410bbeba38ba9633353aff34b05d9755d065f8"
   integrity sha512-jPl+wbWPOWJ7SXsWyqGRk3lGecbar0Cb0OvZF/r/ZU011R4YqiRehgkQ9p4eQfo9DSDLqLL3wHwfxeJiuIsNag==
 
-customize-cra@^1.0.0:
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/customize-cra/-/customize-cra-1.0.0.tgz#73286563631aa08127ad4d30a2e3c89cf4e93c8d"
-  integrity sha512-DbtaLuy59224U+xCiukkxSq8clq++MOtJ1Et7LED1fLszWe88EoblEYFBJ895sB1mC6B4uu3xPT/IjClELhMbA==
-  dependencies:
-    lodash.flow "^3.5.0"
-
 cyclist@^1.0.1:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/cyclist/-/cyclist-1.0.1.tgz#596e9698fd0c80e12038c2b82d6eb1b35b6224d9"
@@ -6641,11 +6634,6 @@ lodash._reinterpolate@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/lodash._reinterpolate/-/lodash._reinterpolate-3.0.0.tgz#0ccf2d89166af03b3663c796538b75ac6e114d9d"
   integrity sha1-DM8tiRZq8Ds2Y8eWU4t1rG4RTZ0=
-
-lodash.flow@^3.5.0:
-  version "3.5.0"
-  resolved "https://registry.yarnpkg.com/lodash.flow/-/lodash.flow-3.5.0.tgz#87bf40292b8cf83e4e8ce1a3ae4209e20071675a"
-  integrity sha1-h79AKSuM+D5OjOGjrkIJ4gBxZ1o=
 
 lodash.memoize@^4.1.2:
   version "4.1.2"
@@ -10067,6 +10055,11 @@ text-table@0.2.0, text-table@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/text-table/-/text-table-0.2.0.tgz#7f5ee823ae805207c00af2df4a84ec3fcfa570b4"
   integrity sha1-f17oI66AUgfACvLfSoTsP8+lcLQ=
+
+three@^0.122.0:
+  version "0.122.0"
+  resolved "https://registry.yarnpkg.com/three/-/three-0.122.0.tgz#bd9ed8a8820074856e8ba7b63fe0a65176e01aeb"
+  integrity sha512-bgYMo0WdaQhf7DhLE8OSNN/rVFO5J4K1A2VeeKqoV4MjjuHjfCP6xLpg8Xedhns7NlEnN3sZ6VJROq19Qyl6Sg==
 
 throat@^4.0.0:
   version "4.1.0"
