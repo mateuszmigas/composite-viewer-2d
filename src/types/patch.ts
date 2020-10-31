@@ -1,3 +1,4 @@
+import { isArrayPatch } from "./../common/typeGuards";
 import { hasProperty } from "../common/typeGuards";
 import { assertNever } from "../utils/typeHelpers";
 import { ValueOf } from "./common";
@@ -23,7 +24,7 @@ export type Patch<T> = ValueOf<
 
 export const applyPatches = <T>(object: T, patches: Patch<T>[]) => {
   patches.forEach(patch => {
-    if (hasProperty(patch, "op")) {
+    if (isArrayPatch(patch)) {
       const patchArray = (patch as unknown) as PatchArray<keyof T, unknown>;
       const array = object[patchArray.path];
 

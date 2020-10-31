@@ -1,12 +1,9 @@
 todo mvp:
-- profile and add render patch
 - refactor profiling options
 - refactor scheduler and remove continous
-- renderpatch restrictions for orchestrator
 - treejs plugin
 - pixijs plugin
 - react plugin
-- full render/patch render
 - make file casing consistent
 
 future: 

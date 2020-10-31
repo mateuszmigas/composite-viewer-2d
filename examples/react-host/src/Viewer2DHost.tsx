@@ -9,6 +9,7 @@ import {
   createCanvasElement,
   RendererControllerFactory,
   PerformanceMonitorPanel,
+  Patchers,
 } from "./viewer2d";
 
 interface Viewer2DHostProps {}
@@ -23,18 +24,20 @@ const createCanvasWorker = (name: string) =>
     name: `${name}.Renderer2D`,
   });
 
-type RenderersTypes = {
+type SuperViewerRenderers = {
   canvas2d2: Canvas2DSimpleRenderer;
   canvas2dOffscreen: Canvas2DSimpleRenderer;
   canvas2dOrchestrator: Canvas2DSimpleRenderer;
 };
+
+type SuperViewerPatches = Patchers<SuperViewerRenderers>;
 
 export class Viewer2DHost extends React.PureComponent<
   Viewer2DHostProps,
   Viewer2DHostState
 > {
   hostElement: React.RefObject<HTMLDivElement>;
-  renderDispatcher!: RenderDispatcher<RenderersTypes>;
+  renderDispatcher!: RenderDispatcher<SuperViewerRenderers>;
   viewportManipulator!: ViewportManipulator;
 
   constructor(props: Viewer2DHostProps) {
@@ -77,6 +80,11 @@ export class Viewer2DHost extends React.PureComponent<
       createCanvasWorker
     );
 
+    const aaaa = factory.createOffscreenIfAvailable(
+      Canvas2DSimpleRenderer,
+      [this.createCanvas(200)],
+      true
+    );
     const rendererControllers = {
       canvas2d2: factory.create(
         Canvas2DSimpleRenderer,
@@ -108,7 +116,7 @@ export class Viewer2DHost extends React.PureComponent<
     };
     perfMonitorPanel.addRenderers(rendererControllers);
 
-    this.renderDispatcher = new RenderDispatcher<RenderersTypes>(
+    this.renderDispatcher = new RenderDispatcher<SuperViewerRenderers>(
       this.hostElement.current,
       rendererControllers,
       this.fullRender
@@ -129,19 +137,20 @@ export class Viewer2DHost extends React.PureComponent<
         circles: [],
         layers: "Esf",
         executionTime: 12,
+        // cycki: () => "fe",
       },
-      canvas2dOffscreen: {
-        rectangles: generateRandomRectangles(1),
-        circles: [],
-        layers: "Esf",
-        executionTime: 12,
-      },
-      canvas2dOrchestrator: {
-        rectangles: generateRandomRectangles(10),
-        circles: [],
-        layers: "Esf",
-        executionTime: 12,
-      },
+      // canvas2dOffscreen: {
+      //   rectangles: generateRandomRectangles(1),
+      //   circles: [],
+      //   layers: "Esf",
+      //   executionTime: 12,
+      // },
+      // canvas2dOrchestrator: {
+      //   rectangles: generateRandomRectangles(10),
+      //   circles: [],
+      //   layers: "Esf",
+      //   executionTime: 12,
+      // },
     });
 
     // this.renderDispatcher.renderPatches({
@@ -176,9 +185,14 @@ export class Viewer2DHost extends React.PureComponent<
             this.renderDispatcher.renderPatches({
               canvas2dOffscreen: [
                 {
-                  path: "rectangles",
-                  op: "add",
-                  values: generateRandomRectangles(5),
+                  path: "layers",
+                  value: "2",
+                },
+              ],
+              canvas2dOrchestrator: [
+                {
+                  path: "layers",
+                  value: "2",
                 },
               ],
             });

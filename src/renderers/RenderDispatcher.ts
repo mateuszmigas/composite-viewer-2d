@@ -23,6 +23,10 @@ type RendererTypesToControllers<T> = {
     : never;
 };
 
+export type Patchers<
+  T extends { [key: string]: Renderer<any> }
+> = RendererTypesToPatchPayloads<RendererTypesToControllers<T>>;
+
 export class RenderDispatcher<
   TRendererTypes extends { [key: string]: Renderer<any> },
   TRendererControllers = RendererTypesToControllers<TRendererTypes>,

@@ -21,7 +21,7 @@ export type ProxyRenderer<TRendererPayload, TParams extends any[]> = {
     renderScheduler: RenderScheduler,
     canvas: HTMLCanvasElement | OffscreenCanvas,
     ...otherParams: Serializable<TParams>
-  ): Renderer<TRendererPayload>;
+  ): Renderer<Serializable<TRendererPayload>>;
 };
 
 export type ProxyEvent<T> = ValueOf<

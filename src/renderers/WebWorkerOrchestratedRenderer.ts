@@ -9,7 +9,7 @@ import { RenderMode, Serializable, Size, Viewport } from "../types";
 import { BalancerField, RenderBalancerOptions } from "./RenderingBalancer";
 import { ProxyRenderer } from "../types/proxy";
 import { Patch } from "../types/patch";
-import { hasProperty } from "../common/typeGuards";
+import { hasProperty, isArrayPatch } from "../common/typeGuards";
 
 type OrchestratingRendererOptions<TRendererPayload> = {
   renderMode: RenderMode;
@@ -138,11 +138,13 @@ export class WebWorkerOrchestratedRenderer<
     if (!this.stateToReplicate.renderPayload) return;
 
     applyPatches(this.stateToReplicate.renderPayload, renderPayloadPatches);
+
+    this.options.balancerOptions.balancedFields;
     this.orchestratedRenderers.forEach((r, index) =>
       r.renderer.renderPatches(
-        index !== 0
-          ? this.patchesExceptAdd(renderPayloadPatches)
-          : renderPayloadPatches
+        index === 0
+          ? renderPayloadPatches
+          : this.patchesExceptAdd(renderPayloadPatches)
       )
     );
   }
@@ -176,7 +178,16 @@ export class WebWorkerOrchestratedRenderer<
 
   private patchesExceptAdd(renderPayloadPatches: Patch<TRendererPayload>[]) {
     return renderPayloadPatches.filter(
-      rp => !hasProperty(rp, "op") || rp.op !== "add"
+      patch =>
+        !this.isBalancedField(patch.path) ||
+        !isArrayPatch(patch) ||
+        patch.op !== "add"
+    );
+  }
+
+  private isBalancedField(path: keyof TRendererPayload) {
+    return this.options.balancerOptions.balancedFields.includes(
+      path as BalancerField<TRendererPayload>
     );
   }
 
