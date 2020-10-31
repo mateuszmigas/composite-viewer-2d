@@ -29,6 +29,7 @@ export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
     renderScheduler: RenderScheduler,
     private element: HTMLDivElement
   ) {
+    PIXI.utils.skipHello();
     this.application = new PIXI.Application({
       transparent: true,
       autoStart: false,
@@ -47,6 +48,7 @@ export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
   setVisibility(visible: boolean) {
     this.isVisible = visible;
     this.element.style.visibility = visible ? "visible" : "collapse";
+    this.scheduleRender();
   }
 
   setSize(size: Rectangle): void {
@@ -80,7 +82,13 @@ export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
 
     if (this.payload.rectangles) {
       this.payload.rectangles.forEach(rectangle => {
-        this.graphics.beginFill(0xde3249);
+        this.graphics.beginFill(
+          PIXI.utils.rgb2hex([
+            rectangle.color.r / 256,
+            rectangle.color.g / 256,
+            rectangle.color.b / 256,
+          ])
+        );
         this.graphics.drawRect(
           ~~(xOffset + rectangle.x * zoom),
           ~~(yOffset + rectangle.y * zoom),

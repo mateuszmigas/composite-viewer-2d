@@ -1,8 +1,6 @@
 todo mvp:
 - refactor profiling options
 - refactor scheduler and remove continous
-- treejs plugin
-- pixijs plugin
 - react plugin
 - make file casing consistent
 
@@ -18,6 +16,7 @@ problems:
 
 bugs:
 - fix not hiding performance monitor text
+- pixi goes out of sync sometimes
 
 profiling:
 - observer memory usage, no leaks
