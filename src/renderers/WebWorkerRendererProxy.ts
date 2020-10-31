@@ -1,3 +1,4 @@
+import { Renderer } from "./Renderer";
 import { Patch } from "./../types/patch";
 import {
   RenderingPerformanceMonitor,
@@ -5,7 +6,6 @@ import {
 } from "./RenderingPerformanceMonitor";
 import { generateGuid } from "./../utils/common";
 import { assertNever } from "./../utils/typeHelpers";
-import { Renderer } from "./Renderer";
 import {
   createRenderSchedulerForMode,
   enhanceWithProfiler,
@@ -30,8 +30,10 @@ type ProxyOptions = {
     updateStatsOnFrameCount?: number;
   };
 };
-type RenderProxyReturnEvent = ProxyReturnEvent<Renderer>;
-type RenderProxyReturnEventListener = ProxyReturnEventListener<Renderer>;
+type RenderProxyReturnEvent<TPayload> = ProxyReturnEvent<Renderer<TPayload>>;
+type RenderProxyReturnEventListener<TPayload> = ProxyReturnEventListener<
+  Renderer<TPayload>
+>;
 
 type RenderProxyBackEvent = {
   type: "renderingStats";
@@ -41,7 +43,7 @@ type RenderProxyBackEventListener = {
   type: "renderingStats";
   callback: (stats: RenderingStats) => void;
 };
-type RenderProxyEvent =
+type RenderProxyEvent<TPayload> =
   | {
       type: "createRenderer";
       data: [
@@ -55,14 +57,14 @@ type RenderProxyEvent =
         }
       ];
     }
-  | ProxyEvent<Renderer>;
+  | ProxyEvent<Renderer<TPayload>>;
 
 const defaultRendererConstructors: WebWorkerCompatibleRenderer[] = [
   Canvas2DSimpleRenderer,
 ];
 
 export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
-  implements Renderer {
+  implements Renderer<TRendererPayload> {
   worker: Worker;
   canvas: HTMLCanvasElement;
   eventListeners: { [key: string]: (...args: any) => void } = {};
@@ -105,14 +107,14 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
     }
   }
 
-  render(renderPayload: unknown): void {
+  render(renderPayload: TRendererPayload): void {
     this.postWorkerMessage({
       type: "render",
       data: [renderPayload],
     });
   }
 
-  renderPatches(renderPayloadPatches: Patch<unknown>[]): void {
+  renderPatches(renderPayloadPatches: Patch<TRendererPayload>[]): void {
     this.postWorkerMessage({
       type: "renderPatches",
       data: [renderPayloadPatches],
@@ -184,7 +186,7 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
   }
 
   private postWorkerMessage(
-    event: RenderProxyEvent,
+    event: RenderProxyEvent<TRendererPayload>,
     transfer?: Transferable[]
   ) {
     if (transfer) this.worker.postMessage(event, transfer);
@@ -206,13 +208,15 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
     this.worker.addEventListener("message", eventCallback);
   }
 
-  private listenToCallbackMessage(listener: RenderProxyReturnEventListener) {
+  private listenToCallbackMessage(
+    listener: RenderProxyReturnEventListener<TRendererPayload>
+  ) {
     const { type, id, callback } = listener;
 
     const eventCallback = ({
       data: proxyEvent,
     }: {
-      data: RenderProxyReturnEvent;
+      data: RenderProxyReturnEvent<TRendererPayload>;
     }) => {
       if (proxyEvent.type === type && proxyEvent.id === id) {
         if (hasProperty(proxyEvent, "returnData"))
@@ -238,7 +242,7 @@ export const exposeToProxy = (
   worker: Worker,
   customRendererConstructors: WebWorkerCompatibleRenderer[]
 ) => {
-  let renderer: Renderer;
+  let renderer: Renderer<unknown>;
   const rendererConstructors = [
     ...defaultRendererConstructors,
     ...customRendererConstructors,
@@ -259,12 +263,12 @@ export const exposeToProxy = (
   };
 
   const postWorkerMessage = (
-    event: RenderProxyReturnEvent | RenderProxyBackEvent
+    event: RenderProxyReturnEvent<unknown> | RenderProxyBackEvent
   ) => worker.postMessage(event);
 
   worker.addEventListener(
     "message",
-    ({ data: proxyEvent }: { data: RenderProxyEvent }) => {
+    ({ data: proxyEvent }: { data: RenderProxyEvent<unknown> }) => {
       switch (proxyEvent.type) {
         case "createRenderer": {
           const [

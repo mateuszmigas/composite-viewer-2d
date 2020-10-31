@@ -5,7 +5,7 @@ import { Size, Rectangle } from "../types/geometry";
 import { Patch } from "../types/patch";
 import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
 import { Viewport } from "../types/viewport";
-import { GenericRender, Renderer } from "./Renderer";
+import { Renderer } from "./Renderer";
 import { RenderScheduler } from "./RenderScheduler";
 
 type CanRenderPayload = {
@@ -26,7 +26,7 @@ const randomColor = () => {
   };
 };
 
-export class Canvas2DSimpleRenderer implements GenericRender<CanRenderPayload> {
+export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
   private canvasContext:
     | CanvasRenderingContext2D
     | OffscreenCanvasRenderingContext2D;

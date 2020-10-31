@@ -3,7 +3,7 @@ import { Nullable } from "./../types/common";
 import { createIndexArray } from "./../common/arrayExtensions";
 import { WebWorkerRendererProxy } from "./WebWorkerRendererProxy";
 import { RenderingStats } from "./RenderingPerformanceMonitor";
-import { GenericRender, Renderer } from "./Renderer";
+import { Renderer } from "./Renderer";
 import { PickingOptions, PickingResult } from "../picking";
 import { RenderMode, Serializable, Size, Viewport } from "../types";
 import { BalancerField, RenderBalancerOptions } from "./RenderingBalancer";
@@ -47,7 +47,7 @@ type PerformanceCheckResult<TRendererPayload> =
     };
 
 type OrchestratedRenderer<TRendererPayload> = {
-  readonly renderer: GenericRender<TRendererPayload>;
+  readonly renderer: Renderer<TRendererPayload>;
   readonly canvas: HTMLCanvasElement;
   payloadSelector: (payload: TRendererPayload) => unknown;
   profilerStats: PerformanceStats | null;
@@ -57,7 +57,7 @@ type OrchestratedRenderer<TRendererPayload> = {
 export class WebWorkerOrchestratedRenderer<
   TRendererPayload,
   TParams extends any[]
-> implements GenericRender<TRendererPayload> {
+> implements Renderer<TRendererPayload> {
   orchestratedRenderers: OrchestratedRenderer<TRendererPayload>[];
   private balancerTimerHandler: number;
   private balancerOptions: Required<RenderBalancerOptions<TRendererPayload>>;
@@ -291,7 +291,9 @@ export class WebWorkerOrchestratedRenderer<
     this.orchestratedRenderers.forEach(r => (r.profilerStats = null));
   }
 
-  private forEachRenderer(callback: (renderer: Renderer) => void) {
+  private forEachRenderer(
+    callback: (renderer: Renderer<TRendererPayload>) => void
+  ) {
     this.orchestratedRenderers.forEach(r => callback(r.renderer));
   }
 }

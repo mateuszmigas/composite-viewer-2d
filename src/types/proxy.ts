@@ -1,5 +1,5 @@
-import { GenericRender } from "./../renderers/Renderer";
-import { Renderer, RenderScheduler } from "../renderers";
+import { Renderer } from "./../renderers/Renderer";
+import { RenderScheduler } from "../renderers";
 import { Serializable, ValueOf } from "./common";
 
 type ProxyPromiseResult<T> =
@@ -21,7 +21,7 @@ export type ProxyRenderer<TRendererPayload, TParams extends any[]> = {
     renderScheduler: RenderScheduler,
     canvas: HTMLCanvasElement | OffscreenCanvas,
     ...otherParams: Serializable<TParams>
-  ): GenericRender<TRendererPayload>;
+  ): Renderer<TRendererPayload>;
 };
 
 export type ProxyEvent<T> = ValueOf<

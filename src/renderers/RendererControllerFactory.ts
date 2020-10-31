@@ -7,7 +7,7 @@ import { WebWorkerRendererProxy } from "./WebWorkerRendererProxy";
 import { Serializable } from "../types/common";
 import { ProxyRenderer } from "../types/proxy";
 import { RendererController } from "./RendererController";
-import { GenericRender } from "./Renderer";
+import { Renderer } from "./Renderer";
 import {
   createRenderSchedulerForMode,
   enhanceWithProfiler,
@@ -59,10 +59,9 @@ export class RendererControllerFactory {
 
   create<TRendererPayload, TParams extends any[]>(
     contructorFunction: {
-      new (
-        renderScheduler: RenderScheduler,
-        ...otherParams: TParams
-      ): GenericRender<TRendererPayload>;
+      new (renderScheduler: RenderScheduler, ...otherParams: TParams): Renderer<
+        TRendererPayload
+      >;
     },
     contructorParams: TParams,
     enabled: boolean

@@ -1,9 +1,9 @@
-import { GenericRender, Renderer } from "./Renderer";
+import { Renderer } from "./Renderer";
 import { RendererExecutionEnvironment } from "./RendererExecutionEnvironment";
 
 export type RendererController<TPayload> = {
   readonly id: string;
-  readonly renderer: GenericRender<TPayload>;
+  readonly renderer: Renderer<TPayload>;
   readonly executionEnvironment: RendererExecutionEnvironment;
   enabled: boolean;
 };

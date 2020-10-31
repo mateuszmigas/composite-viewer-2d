@@ -1,19 +1,14 @@
-import { timeStamp } from "console";
 import React from "react";
-import { GenericRender } from "../../../lib";
-import { Patch } from "../../../lib/types/patch";
 import { generateRandomRectangles } from "./helpers";
 import {
   Canvas2DSimpleRenderer,
   Color,
   RenderDispatcher,
-  RenderRectangleObject,
   Viewport,
   ViewportManipulator,
   createCanvasElement,
   RendererControllerFactory,
   PerformanceMonitorPanel,
-  RendererController,
 } from "./viewer2d";
 
 interface Viewer2DHostProps {}
@@ -21,13 +16,6 @@ interface Viewer2DHostState {}
 
 export const randomInteger = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1) + min);
-const randomColor = (): Color => {
-  return {
-    r: randomInteger(0, 255),
-    g: randomInteger(0, 255),
-    b: randomInteger(0, 255),
-  };
-};
 
 const createCanvasWorker = (name: string) =>
   new Worker("./renderWorker.template.ts", {
@@ -135,9 +123,6 @@ export class Viewer2DHost extends React.PureComponent<
   }
 
   private fullRender = () => {
-    const newLocal = generateRandomRectangles(100);
-    const newLocal_1 = Date.now();
-
     this.renderDispatcher.render({
       canvas2d2: {
         rectangles: generateRandomRectangles(1),

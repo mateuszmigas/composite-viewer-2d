@@ -5,7 +5,7 @@ import { RendererController } from "./RendererController";
 import { Viewport } from "../types/viewport";
 import { observeElementBoundingRect } from "../utils/dom";
 import { Patch } from "../types/patch";
-import { GenericRender } from "./Renderer";
+import { Renderer } from "./Renderer";
 
 type RendererTypesToPatchPayloads<T> = {
   [K in keyof T]?: T[K] extends RendererController<infer P>
@@ -18,13 +18,13 @@ type RendererTypesToPayloads<T> = {
 };
 
 type RendererTypesToControllers<T> = {
-  [K in keyof T]: T[K] extends GenericRender<infer R>
+  [K in keyof T]: T[K] extends Renderer<infer R>
     ? RendererController<R>
     : never;
 };
 
 export class RenderDispatcher<
-  TRendererTypes extends { [key: string]: GenericRender<any> },
+  TRendererTypes extends { [key: string]: Renderer<any> },
   TRendererControllers = RendererTypesToControllers<TRendererTypes>,
   TRendererPayloads = RendererTypesToPayloads<TRendererControllers>,
   TRendererPatchPayloads = RendererTypesToPatchPayloads<TRendererControllers>

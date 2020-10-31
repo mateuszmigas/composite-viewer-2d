@@ -1,6 +1,6 @@
 import {
-  Renderer,
   Size,
+  Renderer,
   Rectangle,
   Viewport,
   RenderRectangleObject,
@@ -11,7 +11,12 @@ import {
   PickingResult,
 } from "./viewer2d";
 
-export class MyCustomRenderer implements Renderer {
+type MyRendererPayload = {
+  rectangles?: RenderRectangleObject[];
+  circles?: RenderCircleObject[];
+};
+
+export class MyCustomRenderer implements Renderer<MyRendererPayload> {
   private canvasContext:
     | CanvasRenderingContext2D
     | OffscreenCanvasRenderingContext2D;
@@ -63,10 +68,7 @@ export class MyCustomRenderer implements Renderer {
 
   payload: any;
 
-  render(renderPayload: {
-    rectangles?: RenderRectangleObject[];
-    circles?: RenderCircleObject[];
-  }): void {
+  render(renderPayload: MyRendererPayload): void {
     this.payload = renderPayload;
     this.scheduleRender();
   }

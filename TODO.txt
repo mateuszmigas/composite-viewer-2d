@@ -1,5 +1,4 @@
 todo mvp:
-- try to get rid of rendererbase
 - profile and add render patch
 - refactor profiling options
 - refactor scheduler and remove continous
