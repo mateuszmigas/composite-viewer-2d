@@ -1,25 +1,27 @@
 import React from "react";
 import { generateRandomRectangles } from "./helpers";
-import { ThreeJsRendererer } from "./ThreejsRenderer";
+import { createCanvasChild, createDivChild } from "./helpers/dom";
+import { PixijsRendererRenderer } from "./renderers/PixijsRenderer";
+import { ThreeJsRendererer } from "./renderers/ThreejsRenderer";
 import {
   Canvas2DSimpleRenderer,
   RenderDispatcher,
   Viewport,
   ViewportManipulator,
-  createCanvasElement,
   RendererControllerFactory,
   PerformanceMonitorPanel,
   Patchers,
 } from "./viewer2d";
 
 const createCanvasWorker = (name: string) =>
-  new Worker("./renderWorker.template.ts", {
+  new Worker("./renderers/renderWorker.template.ts", {
     type: "module",
     name: `${name}.Renderer2D`,
   });
 
 type SuperViewerRenderers = {
   threejs: ThreeJsRendererer;
+  pixijs: PixijsRendererRenderer;
   canvas2d2: Canvas2DSimpleRenderer;
   // canvas2dOffscreen: Canvas2DSimpleRenderer;
   // canvas2dOrchestrator: Canvas2DSimpleRenderer;
@@ -72,12 +74,17 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
     const rendererControllers = {
       canvas2d2: factory.create(
         Canvas2DSimpleRenderer,
-        [this.createCanvas(101)],
+        [createCanvasChild(this.hostElement.current, 101)],
         true
       ),
-      threejs: factory.create(
+      pixijs: factory.create(
+        PixijsRendererRenderer,
+        [createDivChild(this.hostElement.current, 102)],
+        true
+      ),
+      threejs: factory.createOffscreenIfAvailable(
         ThreeJsRendererer,
-        [this.createCanvas(102)],
+        [createCanvasChild(this.hostElement.current, 103)],
         true
       ),
       // threejs: factory.createOrchestratedOffscreenIfAvailable(
@@ -107,11 +114,6 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
     );
 
     this.renderDispatcher.setViewport(initialViewport);
-  }
-
-  private createCanvas(zIndex: number) {
-    if (this.hostElement.current === null) throw new Error("fs");
-    return createCanvasElement(this.hostElement.current, zIndex);
   }
 
   private fullRender = () => {

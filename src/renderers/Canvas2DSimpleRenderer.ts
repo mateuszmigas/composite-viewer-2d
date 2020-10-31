@@ -78,18 +78,18 @@ export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
     this.scheduleRender();
   }
 
-  render(renderPayload: CanRenderPayload) {
-    const now = Date.now() - renderPayload.executionTime;
+  render(payload: CanRenderPayload) {
+    const now = Date.now() - payload.executionTime;
     console.log("now", now);
 
-    this.payload = renderPayload;
+    this.payload = payload;
     this.scheduleRender();
   }
 
-  renderPatches(renderPayloadPatches: Patch<CanRenderPayload>[]) {
-    console.log("patches", renderPayloadPatches, this.payload);
+  renderPatches(payloadPatches: Patch<CanRenderPayload>[]) {
+    console.log("patches", payloadPatches, this.payload);
     if (this.payload) {
-      applyPatches(this.payload, renderPayloadPatches);
+      applyPatches(this.payload, payloadPatches);
       this.scheduleRender();
     }
   }

@@ -11,7 +11,7 @@ import {
   Patch,
   isArrayPatch,
   applyPatches,
-} from "./viewer2d";
+} from "../viewer2d";
 import * as THREE from "three";
 
 type ThreeJsRendererPayload = {
@@ -21,7 +21,7 @@ type ThreeJsRendererPayload = {
 export class ThreeJsRendererer implements Renderer<ThreeJsRendererPayload> {
   private renderer: THREE.WebGLRenderer;
   private scene = new THREE.Scene();
-  private camera = new THREE.OrthographicCamera(0, 0, 0, 0, -1000, 1000);
+  private camera = new THREE.OrthographicCamera(0, 0, 0, 0, -2, 2);
   private geometry = new THREE.BoxBufferGeometry(1, 1, 1);
 
   private size: Size = { width: 0, height: 0 };
@@ -68,12 +68,12 @@ export class ThreeJsRendererer implements Renderer<ThreeJsRendererPayload> {
     this.scheduleRender();
   }
 
-  render(renderPayload: ThreeJsRendererPayload) {
+  render(payload: ThreeJsRendererPayload) {
     this.scene.clear();
-    this.payload = renderPayload;
+    this.payload = payload;
 
-    if (renderPayload.rectangles) {
-      renderPayload.rectangles.forEach(rectangle => {
+    if (payload.rectangles) {
+      payload.rectangles.forEach(rectangle => {
         this.scene.add(this.createCubeFromRectangle(rectangle));
       });
     }
@@ -81,11 +81,11 @@ export class ThreeJsRendererer implements Renderer<ThreeJsRendererPayload> {
     this.scheduleRender();
   }
 
-  renderPatches(renderPayloadPatches: Patch<ThreeJsRendererPayload>[]) {
+  renderPatches(payloadPatches: Patch<ThreeJsRendererPayload>[]) {
     if (this.payload) {
-      applyPatches(this.payload, renderPayloadPatches);
+      applyPatches(this.payload, payloadPatches);
 
-      renderPayloadPatches.forEach(patch => {
+      payloadPatches.forEach(patch => {
         if (
           patch.path === "rectangles" &&
           isArrayPatch(patch) &&
