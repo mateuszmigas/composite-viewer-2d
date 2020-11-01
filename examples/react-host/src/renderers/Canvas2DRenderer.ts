@@ -1,32 +1,24 @@
-import { applyPatches } from "./../types/patch";
-import { hasPropertyInChain } from "../common/typeGuards";
-import { PickingOptions, PickingResult } from "../picking";
-import { Size, Rectangle } from "../types/geometry";
-import { Patch } from "../types/patch";
-import { RenderRectangleObject, RenderCircleObject } from "../types/renderItem";
-import { Viewport } from "../types/viewport";
-import { Renderer } from "./Renderer";
-import { RenderScheduler } from "./RenderScheduler";
+import {
+  Size,
+  Renderer,
+  Rectangle,
+  Viewport,
+  RenderScheduler,
+  hasPropertyInChain,
+  PickingOptions,
+  PickingResult,
+  Patch,
+  applyPatches,
+} from "../viewer2d";
+import { RectangleShape } from "./shapes";
 
-type CanRenderPayload = {
-  rectangles: RenderRectangleObject[];
-  circles: RenderCircleObject[];
+type Canvas2DRendererPayload = {
+  rectangles: RectangleShape[];
   layers: string;
   executionTime: number;
 };
 
-export const randomInteger = (min: number, max: number) =>
-  Math.floor(Math.random() * (max - min + 1) + min);
-
-const randomColor = () => {
-  return {
-    r: randomInteger(0, 255),
-    g: randomInteger(0, 255),
-    b: randomInteger(0, 255),
-  };
-};
-
-export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
+export class Canvas2DRenderer implements Renderer<Canvas2DRendererPayload> {
   private canvasContext:
     | CanvasRenderingContext2D
     | OffscreenCanvasRenderingContext2D;
@@ -34,10 +26,8 @@ export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
   private size: Size = { width: 0, height: 0 };
   private viewport: Viewport = { position: { x: 0, y: 0 }, zoom: 1 };
   private isVisible = true;
-  private payload: CanRenderPayload | null = null;
+  private payload: Canvas2DRendererPayload | null = null;
   private scheduleRender: () => void;
-
-  color = randomColor();
 
   constructor(
     renderScheduler: RenderScheduler,
@@ -48,7 +38,7 @@ export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
     if (context === null) throw Error("context is null");
 
     this.canvasContext = context;
-    this.canvasContext.globalCompositeOperation = "destination-over"; //todo check performance
+    this.canvasContext.globalCompositeOperation = "destination-over";
 
     this.scheduleRender = () => {
       if (this.payload && this.isVisible) renderScheduler(this.renderInternal);
@@ -64,7 +54,6 @@ export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
     this.scheduleRender();
   }
 
-  //todo canvas left
   setSize(size: Rectangle): void {
     const canvas = this.canvasContext.canvas;
     canvas.width = size.width;
@@ -78,16 +67,12 @@ export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
     this.scheduleRender();
   }
 
-  render(payload: CanRenderPayload) {
-    const now = Date.now() - payload.executionTime;
-    console.log("now", now);
-
+  render(payload: Canvas2DRendererPayload) {
     this.payload = payload;
     this.scheduleRender();
   }
 
-  renderPatches(payloadPatches: Patch<CanRenderPayload>[]) {
-    console.log("patches", payloadPatches, this.payload);
+  renderPatches(payloadPatches: Patch<Canvas2DRendererPayload>[]) {
     if (this.payload) {
       applyPatches(this.payload, payloadPatches);
       this.scheduleRender();
@@ -95,9 +80,9 @@ export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
   }
 
   renderInternal = () => {
-    this.clearCanvas();
-
     if (!this.payload) return;
+
+    this.canvasContext.clearRect(0, 0, this.size.width, this.size.height);
 
     const zoom = this.viewport.zoom;
     const { x: xOffset, y: yOffset } = this.viewport.position;
@@ -116,32 +101,11 @@ export class Canvas2DSimpleRenderer implements Renderer<CanRenderPayload> {
         );
       });
     }
-
-    if (this.payload.circles) {
-      //todo
-      this.canvasContext.beginPath();
-      this.payload.circles.forEach((circle: any) => {
-        const x = ~~(xOffset + circle.x * zoom);
-        const y = ~~(yOffset + circle.y * zoom);
-        this.canvasContext.moveTo(x, y);
-        this.canvasContext.arc(x, y, 10, 0, Math.PI * 2);
-      });
-      this.canvasContext.fillStyle = "black";
-      this.canvasContext.fill();
-    }
   };
 
   pickObjects(options: PickingOptions): Promise<PickingResult[]> {
     return Promise.resolve(this.isVisible ? ["a", "b"] : ([] as any));
   }
 
-  dispose(): void {
-    console.log("disposing canvas");
-
-    this.clearCanvas();
-  }
-
-  private clearCanvas() {
-    this.canvasContext.clearRect(0, 0, this.size.width, this.size.height);
-  }
+  dispose() {}
 }

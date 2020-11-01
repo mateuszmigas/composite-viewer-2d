@@ -2,16 +2,15 @@ import { fail } from "assert";
 import React from "react";
 import { generateRandomRectangles } from "./helpers";
 import { createCanvasChild, createDivChild } from "./helpers/dom";
+import { Canvas2DRenderer } from "./renderers/Canvas2DRenderer";
 import { PixijsRendererRenderer } from "./renderers/PixijsRenderer";
 import { ThreeJsRendererer } from "./renderers/ThreejsRenderer";
 import {
-  Canvas2DSimpleRenderer,
   RenderDispatcher,
   Viewport,
   ViewportManipulator,
   RendererControllerFactory,
   PerformanceMonitorPanel,
-  Patchers,
 } from "./viewer2d";
 
 const createCanvasWorker = (name: string) =>
@@ -23,7 +22,7 @@ const createCanvasWorker = (name: string) =>
 type SuperViewerRenderers = {
   threejs: ThreeJsRendererer;
   pixijs: PixijsRendererRenderer;
-  canvas2d2: Canvas2DSimpleRenderer;
+  canvas2d2: Canvas2DRenderer;
 };
 
 //type SuperViewerPatches = Patchers<SuperViewerRenderers>;
@@ -72,7 +71,7 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
 
     const rendererControllers = {
       canvas2d2: factory.create(
-        Canvas2DSimpleRenderer,
+        Canvas2DRenderer,
         [createCanvasChild(this.hostElement.current, 101)],
         true
       ),
@@ -120,7 +119,6 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
     this.renderDispatcher.render({
       canvas2d2: {
         rectangles,
-        circles: [],
         layers: "Esf",
         executionTime: 12,
         // cycki: () => "fe",

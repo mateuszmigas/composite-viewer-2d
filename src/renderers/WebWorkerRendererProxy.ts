@@ -10,7 +10,6 @@ import {
   createRenderSchedulerForMode,
   enhanceWithProfiler,
 } from "./RenderScheduler";
-import { Canvas2DSimpleRenderer } from "./Canvas2DSimpleRenderer";
 import { Size, Viewport } from "../types";
 import { RenderMode, Serializable } from "./../types/common";
 import { PickingOptions, PickingResult } from "../picking";
@@ -58,10 +57,6 @@ type RenderProxyEvent<TPayload> =
       ];
     }
   | ProxyEvent<Renderer<TPayload>>;
-
-const defaultRendererConstructors: WebWorkerCompatibleRenderer[] = [
-  Canvas2DSimpleRenderer,
-];
 
 export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
   implements Renderer<TRendererPayload> {
@@ -240,13 +235,9 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
 
 export const exposeToProxy = (
   worker: Worker,
-  customRendererConstructors: WebWorkerCompatibleRenderer[]
+  rendererConstructors: WebWorkerCompatibleRenderer[]
 ) => {
   let renderer: Renderer<unknown>;
-  const rendererConstructors = [
-    ...defaultRendererConstructors,
-    ...customRendererConstructors,
-  ];
 
   const getRendererConstructor = (
     rendererName: string

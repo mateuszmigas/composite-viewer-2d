@@ -22,10 +22,4 @@ export type Size = {
   height: number;
 };
 
-export type Size3D = {
-  width: number;
-  height: number;
-  length: number;
-};
-
 export type Rectangle = Position2D & Size;

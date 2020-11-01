@@ -3,7 +3,6 @@ import {
   Renderer,
   Rectangle,
   Viewport,
-  RenderRectangleObject,
   RenderScheduler,
   hasPropertyInChain,
   PickingOptions,
@@ -13,9 +12,10 @@ import {
   applyPatches,
 } from "../viewer2d";
 import * as THREE from "three";
+import { RectangleShape } from "./shapes";
 
 type ThreeJsRendererPayload = {
-  rectangles: RenderRectangleObject[];
+  rectangles: RectangleShape[];
 };
 
 export class ThreeJsRendererer implements Renderer<ThreeJsRendererPayload> {
@@ -107,7 +107,6 @@ export class ThreeJsRendererer implements Renderer<ThreeJsRendererPayload> {
   }
 
   pickObjects(options: PickingOptions): Promise<PickingResult[]> {
-    //todo hit testing here
     return Promise.resolve(["c", "d"] as any);
   }
 
@@ -132,7 +131,7 @@ export class ThreeJsRendererer implements Renderer<ThreeJsRendererPayload> {
     this.camera.updateProjectionMatrix();
   }
 
-  private createCubeFromRectangle = (rectangle: RenderRectangleObject) => {
+  private createCubeFromRectangle = (rectangle: RectangleShape) => {
     const object = new THREE.Mesh(
       this.geometry,
       new THREE.MeshBasicMaterial({
@@ -145,7 +144,7 @@ export class ThreeJsRendererer implements Renderer<ThreeJsRendererPayload> {
     );
 
     object.position.x = rectangle.x + rectangle.width / 2;
-    object.position.y = 100 - rectangle.y - rectangle.height / 2;
+    object.position.y = -rectangle.y - rectangle.height / 2;
     object.position.z = 1;
     object.scale.x = rectangle.width;
     object.scale.y = rectangle.height;

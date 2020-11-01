@@ -16,7 +16,7 @@ problems:
 
 bugs:
 - fix not hiding performance monitor text
-- pixi goes out of sync sometimes
+- pixi goes out of sync after resize
 
 profiling:
 - observer memory usage, no leaks

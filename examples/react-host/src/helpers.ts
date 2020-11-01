@@ -1,4 +1,5 @@
-import { Color, RenderRectangleObject } from "./viewer2d";
+import { RectangleShape } from "./renderers/shapes";
+import { Color } from "./viewer2d";
 
 export const repeat = (count: number) =>
   Array(count)
@@ -16,7 +17,7 @@ const randomColor = (): Color => {
   };
 };
 
-export const randomRectangle = (): RenderRectangleObject => {
+export const randomRectangle = (): RectangleShape => {
   return {
     type: "Rectangle",
     containerId: "1",

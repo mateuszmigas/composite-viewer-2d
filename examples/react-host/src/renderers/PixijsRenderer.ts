@@ -6,14 +6,14 @@ import {
   PickingResult,
   Rectangle,
   Renderer,
-  RenderRectangleObject,
   RenderScheduler,
   Size,
   Viewport,
 } from "../viewer2d";
+import { RectangleShape } from "./shapes";
 
 type PixijsRendererPayload = {
-  rectangles: RenderRectangleObject[];
+  rectangles: RectangleShape[];
 };
 
 export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
@@ -54,6 +54,7 @@ export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
   setSize(size: Rectangle): void {
     this.size = { width: size.width, height: size.height };
     this.application.renderer.resize(this.size.width, this.size.height);
+    this.scheduleRender();
   }
 
   setViewport(viewport: Viewport) {
