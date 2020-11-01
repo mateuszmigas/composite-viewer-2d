@@ -1,7 +1,7 @@
 {
-  "name": "@mateuszmigas/viewer-2d",
+  "name": "@mateuszmigas/composite-viewer-2d",
   "version": "0.0.1",
-  "description": "2D Viewier",
+  "description": "CompositeViewer2D",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "files": [
@@ -15,14 +15,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/mateuszmigas/viewer-2d"
+    "url": "git+https://github.com/mateuszmigas/composite-viewer-2d"
   },
   "author": "Mateusz Migas",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/mateuszmigas/viewer-2d/issues"
+    "url": "https://github.com/mateuszmigas/composite-viewer-2d/issues"
   },
-  "homepage": "https://github.com/mateuszmigas/viewer-2d#readme",
+  "homepage": "https://github.com/mateuszmigas/composite-viewer-2d#readme",
   "devDependencies": {
     "@types/jest": "^26.0.10",
     "@types/uuid": "^8.3.0",

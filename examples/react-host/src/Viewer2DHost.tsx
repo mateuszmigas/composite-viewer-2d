@@ -1,5 +1,4 @@
 import React from "react";
-import { RenderingStatsMonitorPanel } from "../../../lib";
 import { generateRandomRobots } from "./generators";
 import { createCanvasChild, createDivChild } from "./helpers/dom";
 import { Canvas2DRenderer } from "./renderers/canvas2DRenderer";
@@ -11,6 +10,7 @@ import {
   Viewport,
   ViewportManipulator,
   RendererControllerFactory,
+  RenderingStatsMonitorPanel,
 } from "./viewer2d";
 
 const createCanvasWorker = (name: string) =>

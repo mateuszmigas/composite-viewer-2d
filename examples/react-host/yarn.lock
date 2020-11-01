@@ -1367,6 +1367,11 @@
     "@types/yargs" "^15.0.0"
     chalk "^4.0.0"
 
+"@mateuszmigas/composite-viewer-2d@^0.0.1":
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/@mateuszmigas/composite-viewer-2d/-/composite-viewer-2d-0.0.1.tgz#10e50367879dcf5153919bac4bb682ea7b46ed44"
+  integrity sha512-2Xngtp4kw8e/nqxzb4DyDT+f/YFzl7pU5M57EOOjjhRivfNwewryxBQsSbm8SDcmWzsR8zF1KkEHAlfIW/2n+A==
+
 "@mrmlnc/readdir-enhanced@^2.2.1":
   version "2.2.1"
   resolved "https://registry.yarnpkg.com/@mrmlnc/readdir-enhanced/-/readdir-enhanced-2.2.1.tgz#524af240d1a360527b730475ecfa1344aa540dde"
