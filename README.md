@@ -117,6 +117,7 @@ constructor(renderScheduler: RenderScheduler, canvas: HTMLCanvasElement | Offscr
 }
 ```
 | Param | Description |
+| --- | --- |
 | `renderScheduler` | Every renderer needs to have scheduler as it's first constructor param |
 | `canvas` | Web worker proxy will transfer canvas control to the offscreen so it needs canvas as the second param |
 | `otherParams` | Other params that need to be serializable. Typescript should check that :) |
