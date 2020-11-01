@@ -1,8 +1,8 @@
-import { Patch } from "../types/patch";
+import { Patch } from "../patching/patch";
 
-export function isFunction(x: any): x is Function {
+export const isFunction = (x: any): x is Function => {
   return typeof x === "function";
-}
+};
 
 export const hasPropertyInChain = <T extends {}, P extends PropertyKey>(
   obj: T,
@@ -21,3 +21,7 @@ export const hasProperty = <T extends {}, P extends PropertyKey>(
 export const isArrayPatch = <T>(
   object: Patch<T>
 ): object is Patch<T> & Record<"op", unknown> => hasProperty(object, "op");
+
+export const assertNever = (value: never): never => {
+  throw new Error(`Unhandled union member: ${JSON.stringify(value)}`);
+};

@@ -1,2 +1,3 @@
-export * from "./ViewportManipulator";
-export * from "./ThrottleHtmlManipulator";
+export * from "./viewport";
+export * from "./viewportManipulator";
+export * from "./throttleHtmlManipulator";

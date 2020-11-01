@@ -1,6 +1,6 @@
-import { Renderer } from "./../renderers/Renderer";
-import { RenderScheduler } from "../renderers";
-import { Serializable, ValueOf } from "./common";
+import { Renderer } from "./renderer";
+import { RenderScheduler } from ".";
+import { Serializable, ValueOf } from "../utils/typeMapping";
 
 type ProxyPromiseResult<T> =
   | {
@@ -16,7 +16,7 @@ type ProxyPromiseResult<T> =
           result: T;
         });
 
-export type ProxyRenderer<TRendererPayload, TParams extends any[]> = {
+export type ProxyRendererContructor<TRendererPayload, TParams extends any[]> = {
   new (
     renderScheduler: RenderScheduler,
     canvas: HTMLCanvasElement | OffscreenCanvas,

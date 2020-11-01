@@ -1,5 +1,5 @@
-import { Renderer } from "./Renderer";
-import { RendererExecutionEnvironment } from "./RendererExecutionEnvironment";
+import { Renderer } from "./renderer";
+import { RendererExecutionEnvironment } from "./rendererExecutionEnvironment";
 
 export type RendererController<TPayload> = {
   readonly id: string;

@@ -1,4 +1,4 @@
-import { ArrayFieldsOnly } from "../types/common";
+import { ArrayFieldsOnly } from "../utils/typeMapping";
 
 export type BalancerField<T> = keyof ArrayFieldsOnly<T>;
 

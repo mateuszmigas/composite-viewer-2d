@@ -1,30 +1,30 @@
-import { RenderMode } from "../types/common";
 import {
-  RenderingPerformanceMonitor,
+  RenderingStatsMonitor,
   RenderingStats,
-} from "./RenderingPerformanceMonitor";
-import { WebWorkerRendererProxy } from "./WebWorkerRendererProxy";
-import { Serializable } from "../types/common";
-import { ProxyRenderer } from "../types/proxy";
-import { RendererController } from "./RendererController";
-import { Renderer } from "./Renderer";
+} from "../monitoring/renderingStatsMonitor";
+import { WebWorkerRendererProxy } from "./webWorkerRendererProxy";
+import { ProxyRendererContructor } from "./proxyTypes";
+import { RendererController } from "./rendererController";
+import { Renderer } from "./renderer";
 import {
-  createRenderSchedulerForMode,
+  createRenderSchedulerByType,
   enhanceWithProfiler,
+  RenderSchedulerType,
   RenderScheduler,
-} from "./RenderScheduler";
-import { RenderBalancerOptions } from "./RenderingBalancer";
+} from "./renderScheduler";
+import { RenderBalancerOptions } from "./renderingBalancer";
 import { isOffscreenCanvasSupported } from "../utils/dom";
-import { WebWorkerOrchestratedRenderer } from "./WebWorkerOrchestratedRenderer";
-import { RendererExecutionEnvironment } from "./RendererExecutionEnvironment";
-import { generateGuid } from "../utils/common";
+import { WebWorkerOrchestratedRendererProxy } from "./webWorkerOrchestratedRendererProxy";
+import { RendererExecutionEnvironment } from "./rendererExecutionEnvironment";
+import { generateGuid } from "../utils/guid";
+import { Serializable } from "../utils/typeMapping";
 
 export class RendererControllerFactory {
   renderSchedulerFactory: (rendererId: string) => RenderScheduler;
 
   constructor(
     private options: {
-      renderMode: RenderMode;
+      schedulerType: RenderSchedulerType;
       profiling?: {
         onRendererStatsUpdated: (
           rendererId: string,
@@ -36,12 +36,14 @@ export class RendererControllerFactory {
     private workerFactory?: (rendererId: string) => Worker
   ) {
     this.renderSchedulerFactory = (rendererId: string) => {
-      const renderScheduler = createRenderSchedulerForMode(options.renderMode);
+      const renderScheduler = createRenderSchedulerByType(
+        options.schedulerType
+      );
 
       return options.profiling
         ? enhanceWithProfiler(
             renderScheduler,
-            new RenderingPerformanceMonitor(
+            new RenderingStatsMonitor(
               renderingStats =>
                 options.profiling?.onRendererStatsUpdated(
                   rendererId,
@@ -82,7 +84,7 @@ export class RendererControllerFactory {
   }
 
   createOffscreenIfAvailable<TRendererPayload, TParams extends any[]>(
-    contructorFunction: ProxyRenderer<TRendererPayload, TParams>,
+    contructorFunction: ProxyRendererContructor<TRendererPayload, TParams>,
     contructorParams: [HTMLCanvasElement, ...Serializable<TParams>],
     enabled: boolean
   ): RendererController<TRendererPayload> {
@@ -99,7 +101,7 @@ export class RendererControllerFactory {
               return this.workerFactory?.(id);
             },
             {
-              renderMode: this.options.renderMode,
+              schedulerType: this.options.schedulerType,
               profiling: this.options.profiling
                 ? {
                     onRendererStatsUpdated: (renderingStats: RenderingStats) =>
@@ -139,7 +141,7 @@ export class RendererControllerFactory {
     TRendererPayload,
     TParams extends any[]
   >(
-    contructorFunction: ProxyRenderer<TRendererPayload, TParams>,
+    contructorFunction: ProxyRendererContructor<TRendererPayload, TParams>,
     contructorParams: Serializable<TParams>,
     canvasFactory: (index: number) => HTMLCanvasElement,
     balancerOptions: RenderBalancerOptions<TRendererPayload>,
@@ -147,7 +149,7 @@ export class RendererControllerFactory {
   ): RendererController<TRendererPayload> {
     const id = generateGuid();
     const renderer = isOffscreenCanvasSupported()
-      ? new WebWorkerOrchestratedRenderer(
+      ? new WebWorkerOrchestratedRendererProxy(
           index => {
             if (!this.workerFactory) {
               throw new Error(
@@ -158,7 +160,7 @@ export class RendererControllerFactory {
           },
           canvasFactory,
           {
-            renderMode: this.options.renderMode,
+            schedulerType: this.options.schedulerType,
             profiling: this.options.profiling
               ? {
                   onRendererStatsUpdated: (renderingStats: RenderingStats[]) =>

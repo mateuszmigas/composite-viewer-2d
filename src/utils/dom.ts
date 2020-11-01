@@ -1,6 +1,12 @@
-import { Unsubscribe } from "../types/common";
-import { Rectangle } from "../types/geometry";
-import { domRectToRectangle } from "./converters";
+import { Rectangle, Unsubscribe } from "../utils/commonTypes";
+
+const domRectToRectangle = (rect: DOMRect) =>
+  ({
+    x: rect.x,
+    y: rect.y,
+    width: rect.width,
+    height: rect.height,
+  } as Rectangle);
 
 export const observeElementBoundingRect = (
   element: Element,
@@ -17,17 +23,6 @@ export const observeElementBoundingRect = (
 
   resizeObserver.observe(element);
   return () => resizeObserver.disconnect();
-};
-
-export const createCanvasElement = (
-  hostElement: HTMLElement,
-  zIndex: number
-): HTMLCanvasElement => {
-  const canvas = document.createElement("canvas");
-  canvas.style.zIndex = zIndex.toString();
-  canvas.style.position = "absolute"; //important for zIndex to work
-  hostElement.appendChild(canvas);
-  return canvas;
 };
 
 export const isOffscreenCanvasSupported = () =>

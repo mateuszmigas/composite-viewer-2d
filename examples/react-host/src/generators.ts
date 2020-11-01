@@ -1,5 +1,9 @@
-import { EllipseShape, RectangleShape, TextShape } from "./renderers/shapes";
-import { Color } from "./viewer2d";
+import {
+  Color,
+  EllipseShape,
+  RectangleShape,
+  TextShape,
+} from "./renderers/shapes";
 
 export const repeat = (count: number) =>
   Array(count)

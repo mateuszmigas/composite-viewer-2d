@@ -1,4 +1,8 @@
-import { Color } from "../viewer2d";
+export type Color = {
+  r: number;
+  g: number;
+  b: number;
+};
 
 export type RectangleShape = {
   x: number;

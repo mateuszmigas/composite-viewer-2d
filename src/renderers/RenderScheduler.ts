@@ -1,29 +1,19 @@
-import { RenderMode } from "./../types/common";
-import { RenderingPerformanceMonitor } from "./RenderingPerformanceMonitor";
+import { RenderingStatsMonitor } from "../monitoring/renderingStatsMonitor";
 
+export type RenderSchedulerType = "onDemandSynchronized" | "onDemand";
 export type RenderScheduler = (renderCallback: (time: number) => void) => void;
 
 export const createOnDemandRAFRenderScheduler = (): RenderScheduler => (
   renderCallback: (time: number) => void
 ) => requestAnimationFrame(renderCallback);
 
-export const createContinuousRenderScheduler = (): RenderScheduler => {
-  let callback: (time: number) => void;
-
-  function renderLoop(time: number) {
-    callback?.(time);
-    requestAnimationFrame(renderLoop);
-  }
-
-  requestAnimationFrame(renderLoop);
-
-  return (renderCallback: (time: number) => void) =>
-    (callback = renderCallback);
-};
+export const createOnDemandImmediateRenderScheduler = (): RenderScheduler => (
+  renderCallback: (time: number) => void
+) => renderCallback(0);
 
 export const enhanceWithProfiler = (
   scheduler: RenderScheduler,
-  performanceMonitor: RenderingPerformanceMonitor
+  performanceMonitor: RenderingStatsMonitor
 ): RenderScheduler => (renderCallback: (time: number) => void) =>
   scheduler((time: number) => {
     performanceMonitor?.start();
@@ -31,7 +21,9 @@ export const enhanceWithProfiler = (
     performanceMonitor?.end();
   });
 
-export const createRenderSchedulerForMode = (renderMode: RenderMode) =>
-  renderMode === "continuous"
-    ? createContinuousRenderScheduler()
-    : createOnDemandRAFRenderScheduler();
+export const createRenderSchedulerByType = (
+  renderSchedulerType: RenderSchedulerType
+) =>
+  renderSchedulerType === "onDemandSynchronized"
+    ? createOnDemandRAFRenderScheduler()
+    : createOnDemandImmediateRenderScheduler();

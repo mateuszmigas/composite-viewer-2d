@@ -1,20 +1,16 @@
 import React from "react";
-import {
-  generateRandomRectangles,
-  generateRandomRobots,
-  generateRobot,
-} from "./helpers";
+import { RenderingStatsMonitorPanel } from "../../../lib";
+import { generateRandomRobots } from "./generators";
 import { createCanvasChild, createDivChild } from "./helpers/dom";
-import { Canvas2DRenderer } from "./renderers/Canvas2DRenderer";
-import { HtmlRenderer } from "./renderers/HtmlRenderer";
-import { PixijsRendererRenderer } from "./renderers/PixijsRenderer";
-import { ThreeJsRendererer } from "./renderers/ThreejsRenderer";
+import { Canvas2DRenderer } from "./renderers/canvas2DRenderer";
+import { HtmlRenderer } from "./renderers/htmlRenderer";
+import { PixijsRendererRenderer } from "./renderers/pixijsRenderer";
+import { ThreeJsRendererer } from "./renderers/threejsRenderer";
 import {
   RenderDispatcher,
   Viewport,
   ViewportManipulator,
   RendererControllerFactory,
-  PerformanceMonitorPanel,
 } from "./viewer2d";
 
 const createCanvasWorker = (name: string) =>
@@ -61,14 +57,14 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
     );
 
     //debug only
-    const perfMonitorPanel = new PerformanceMonitorPanel();
-    this.hostElement.current.appendChild(perfMonitorPanel.getElement());
+    const monitorPanel = new RenderingStatsMonitorPanel();
+    this.hostElement.current.appendChild(monitorPanel.getElement());
 
     const factory = new RendererControllerFactory(
       {
-        renderMode: "onDemand",
+        schedulerType: "onDemandSynchronized",
         profiling: {
-          onRendererStatsUpdated: perfMonitorPanel.updateStats,
+          onRendererStatsUpdated: monitorPanel.updateStats,
         },
       },
       createCanvasWorker
@@ -114,7 +110,7 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
         true
       ),
     };
-    perfMonitorPanel.addRenderers(rendererControllers);
+    monitorPanel.addRenderers(rendererControllers);
 
     this.renderDispatcher = new RenderDispatcher<SuperViewerRenderers>(
       this.hostElement.current,

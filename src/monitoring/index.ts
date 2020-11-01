@@ -1,1 +1,2 @@
-export * from "./performanceMonitorPanel";
+export * from "./renderingStatsMonitorPanel";
+export * from "./renderingStatsMonitor";

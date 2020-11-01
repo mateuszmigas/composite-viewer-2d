@@ -1,29 +1,30 @@
-import { Renderer } from "./Renderer";
-import { Patch } from "./../types/patch";
+import { Renderer } from "./renderer";
+import { Patch } from "../patching/patch";
 import {
-  RenderingPerformanceMonitor,
+  RenderingStatsMonitor,
   RenderingStats,
-} from "./RenderingPerformanceMonitor";
-import { generateGuid } from "./../utils/common";
-import { assertNever } from "./../utils/typeHelpers";
-import {
-  createRenderSchedulerForMode,
-  enhanceWithProfiler,
-} from "./RenderScheduler";
-import { Size, Viewport } from "../types";
-import { RenderMode, Serializable } from "./../types/common";
+} from "../monitoring/renderingStatsMonitor";
+import { generateGuid } from "../utils/guid";
+import { Size } from "../utils/commonTypes";
 import { PickingOptions, PickingResult } from "../picking";
 import {
   ProxyEvent,
   ProxyReturnEvent,
   ProxyReturnEventListener,
-  ProxyRenderer,
-} from "../types/proxy";
-import { hasProperty } from "../common/typeGuards";
+  ProxyRendererContructor,
+} from "./proxyTypes";
+import { hasProperty, assertNever } from "../utils/typeGuards";
+import { Serializable } from "../utils/typeMapping";
+import {
+  createRenderSchedulerByType,
+  enhanceWithProfiler,
+  RenderSchedulerType,
+} from "./renderScheduler";
+import { Viewport } from "../manipulation/viewport";
 
-type WebWorkerCompatibleRenderer = ProxyRenderer<any, any>;
+type WebWorkerCompatibleRenderer = ProxyRendererContructor<any, any>;
 type ProxyOptions = {
-  renderMode: RenderMode;
+  schedulerType: RenderSchedulerType;
   profiling?: {
     onRendererStatsUpdated: (renderingStats: RenderingStats) => void;
     updateStatsOnFrameCount?: number;
@@ -50,7 +51,7 @@ type RenderProxyEvent<TPayload> =
         rendererType: string,
         rendererParams: unknown[],
         options: {
-          renderMode: RenderMode;
+          schedulerType: RenderSchedulerType;
           enableProfiling: boolean;
           updateStatsOnFrameCount?: number;
         }
@@ -67,7 +68,7 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
   constructor(
     workerFactory: () => Worker,
     renderingOptions: ProxyOptions,
-    rendererConstructor: ProxyRenderer<TRendererPayload, TParams>,
+    rendererConstructor: ProxyRendererContructor<TRendererPayload, TParams>,
     rendererParams: [HTMLCanvasElement, ...Serializable<TParams>]
   ) {
     const [canvas, ...otherParams] = rendererParams;
@@ -83,7 +84,7 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
           rendererConstructor.name,
           otherParams,
           {
-            renderMode: renderingOptions.renderMode,
+            schedulerType: renderingOptions.schedulerType,
             enableProfiling: !!renderingOptions.profiling,
             updateStatsOnFrameCount:
               renderingOptions.profiling?.updateStatsOnFrameCount,
@@ -271,13 +272,13 @@ export const exposeToProxy = (
 
           const rendererConstructor = getRendererConstructor(rendererType);
 
-          const renderScheduler = createRenderSchedulerForMode(
-            options.renderMode
+          const renderScheduler = createRenderSchedulerByType(
+            options.schedulerType
           );
           const enhancedRenderScheduler = options.enableProfiling
             ? enhanceWithProfiler(
                 renderScheduler,
-                new RenderingPerformanceMonitor(
+                new RenderingStatsMonitor(
                   stats => {
                     postWorkerMessage({
                       type: "renderingStats",

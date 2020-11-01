@@ -1,14 +1,14 @@
-import { createIndexArray } from "../common/arrayExtensions";
-import { RenderingStats } from "../renderers/RenderingPerformanceMonitor";
-import { RendererController } from "../renderers/RendererController";
-import { Observable } from "../common/observable";
+import { RenderingStats } from "./renderingStatsMonitor";
+import { RendererController } from "../renderers/rendererController";
+import { Observable } from "../utils/observable";
+import { createIndexArray } from "../utils/array";
 
 type RendererStats = {
   rendererId: string;
   renderingStats: RenderingStats[];
 };
 
-export class PerformanceMonitorPanel {
+export class RenderingStatsMonitorPanel {
   hostElement: HTMLDivElement;
   contentElement: HTMLDivElement;
   statsObservable = new Observable<RendererStats>(null);

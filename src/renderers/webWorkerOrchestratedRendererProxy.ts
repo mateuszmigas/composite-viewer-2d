@@ -1,18 +1,19 @@
-import { applyPatches } from "./../types/patch";
-import { Nullable } from "./../types/common";
-import { createIndexArray } from "./../common/arrayExtensions";
-import { WebWorkerRendererProxy } from "./WebWorkerRendererProxy";
-import { RenderingStats } from "./RenderingPerformanceMonitor";
-import { Renderer } from "./Renderer";
+import { RenderSchedulerType } from "./renderScheduler";
+import { applyPatches, Patch } from "../patching/patch";
+import { createIndexArray } from "../utils/array";
+import { WebWorkerRendererProxy } from "./webWorkerRendererProxy";
+import { RenderingStats } from "../monitoring/renderingStatsMonitor";
+import { Renderer } from "./renderer";
 import { PickingOptions, PickingResult } from "../picking";
-import { RenderMode, Serializable, Size, Viewport } from "../types";
-import { BalancerField, RenderBalancerOptions } from "./RenderingBalancer";
-import { ProxyRenderer } from "../types/proxy";
-import { Patch } from "../types/patch";
-import { hasProperty, isArrayPatch } from "../common/typeGuards";
+import { Size } from "../utils/commonTypes";
+import { Viewport } from "..";
+import { isArrayPatch } from "../utils/typeGuards";
+import { Nullable, Serializable } from "../utils/typeMapping";
+import { ProxyRendererContructor } from "./proxyTypes";
+import { RenderBalancerOptions, BalancerField } from "./renderingBalancer";
 
 type OrchestratingRendererOptions<TRendererPayload> = {
-  renderMode: RenderMode;
+  schedulerType: RenderSchedulerType;
   profiling?: {
     onRendererStatsUpdated: (renderingStats: RenderingStats[]) => void;
   };
@@ -54,7 +55,7 @@ type OrchestratedRenderer<TRendererPayload> = {
   balancerStats: PerformanceStats | null;
 };
 
-export class WebWorkerOrchestratedRenderer<
+export class WebWorkerOrchestratedRendererProxy<
   TRendererPayload,
   TParams extends any[]
 > implements Renderer<TRendererPayload> {
@@ -77,7 +78,7 @@ export class WebWorkerOrchestratedRenderer<
     workerFactory: (index: number) => Worker,
     canvasFactory: (index: number) => HTMLCanvasElement,
     private options: OrchestratingRendererOptions<TRendererPayload>,
-    rendererConstructor: ProxyRenderer<TRendererPayload, TParams>,
+    rendererConstructor: ProxyRendererContructor<TRendererPayload, TParams>,
     rendererParams: Serializable<TParams>
   ) {
     this.balancerOptions = {
@@ -93,7 +94,7 @@ export class WebWorkerOrchestratedRenderer<
       const renderer = new WebWorkerRendererProxy(
         () => workerFactory(index),
         {
-          renderMode: options.renderMode,
+          schedulerType: options.schedulerType,
           profiling: {
             onRendererStatsUpdated: (renderingStats: RenderingStats) => {
               if (index <= this.orchestratedRenderers.length - 1)

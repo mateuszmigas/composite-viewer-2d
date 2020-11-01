@@ -3,7 +3,7 @@ export type RenderingStats = {
   averageFrameTime: number;
 };
 
-export class RenderingPerformanceMonitor {
+export class RenderingStatsMonitor {
   beginTime = 0;
   frames = 0;
   totalRenderTime = 0;

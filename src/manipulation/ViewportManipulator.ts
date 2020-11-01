@@ -1,12 +1,7 @@
-import { ZeroPosition } from "./../types/geometry";
-import { Position2D } from "../types/geometry";
-import {
-  EventHandler,
-  EventType,
-  ThrottleHtmlManipulator,
-} from "./ThrottleHtmlManipulator";
-import { Viewport, zoomAtPosition } from "../types/viewport";
-import { createReducer } from "../common/state";
+import { createReducer } from "../utils/state";
+import { Position, ZeroPosition } from "./../utils/commonTypes";
+import { ThrottleHtmlManipulator } from "./throttleHtmlManipulator";
+import { Viewport, zoomAtPosition } from "./viewport";
 
 type Action =
   | {
@@ -14,8 +9,8 @@ type Action =
       offsetX: number;
       offsetY: number;
     }
-  | { type: "zoomInAtPosition"; position: Position2D }
-  | { type: "zoomOutAtPosition"; position: Position2D };
+  | { type: "zoomInAtPosition"; position: Position }
+  | { type: "zoomOutAtPosition"; position: Position };
 
 const reducer = (viewport: Viewport, action: Action): Viewport => {
   switch (action.type) {
@@ -39,11 +34,6 @@ const reducer = (viewport: Viewport, action: Action): Viewport => {
   }
 };
 
-type CustomHandler<T extends Event> = {
-  type: EventType;
-  handler: EventHandler<T>;
-};
-
 export class ViewportManipulator extends ThrottleHtmlManipulator {
   private pointerPosition = ZeroPosition();
   private isMoving = false;
@@ -52,14 +42,7 @@ export class ViewportManipulator extends ThrottleHtmlManipulator {
   constructor(
     protected element: HTMLElement,
     viewportProvider: Viewport | (() => Viewport),
-    private onViewportChange: (newViewport: Viewport) => void,
-    customization?: {
-      reducer: <TAction extends Action>(
-        action: TAction,
-        viewport: Viewport
-      ) => Viewport;
-      eventHandlers: CustomHandler<Event>[];
-    }
+    private onViewportChange: (newViewport: Viewport) => void
   ) {
     super(element);
 

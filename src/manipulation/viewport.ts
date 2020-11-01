@@ -1,14 +1,14 @@
-import { Position2D } from "./geometry";
+import { Position } from "./../utils/commonTypes";
 
 export type Viewport = {
-  position: Position2D;
+  position: Position;
   zoom: number;
 };
 
 export const zoomAtPosition = (
   currentViewport: Viewport,
   zoom: number,
-  position: Position2D
+  position: Position
 ): Viewport => ({
   position: {
     x: position.x - (position.x - currentViewport.position.x) * zoom,

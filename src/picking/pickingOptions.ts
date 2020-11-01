@@ -1,9 +1,9 @@
-import { Position2D, Rectangle } from "../types/geometry";
+import { Position, Rectangle } from "../utils/commonTypes";
 
 export type PickingOptions =
   | {
       mode: "position";
-      position: Position2D;
+      position: Position;
     }
   | {
       mode: "area";

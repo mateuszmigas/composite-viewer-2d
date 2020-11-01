@@ -1,44 +1,43 @@
 import { PickingOptions, PickingResult } from "../picking";
-import { Unsubscribe } from "../types/common";
-import { Size } from "../types/geometry";
-import { RendererController } from "./RendererController";
-import { Viewport } from "../types/viewport";
+import { Size, Unsubscribe } from "../utils/commonTypes";
+import { RendererController } from "./rendererController";
+import { Viewport } from "../manipulation/viewport";
 import { observeElementBoundingRect } from "../utils/dom";
-import { Patch } from "../types/patch";
-import { Renderer } from "./Renderer";
+import { Patch } from "../patching/patch";
+import { Renderer } from "./renderer";
 
-type RendererTypesToPatchPayloads<T> = {
+type GetPayloadType<T> = {
+  [K in keyof T]?: T[K] extends RendererController<infer R> ? R : never;
+};
+
+type GetPayloadPatchType<T> = {
   [K in keyof T]?: T[K] extends RendererController<infer P>
     ? Patch<P>[]
     : never;
 };
 
-type RendererTypesToPayloads<T> = {
-  [K in keyof T]?: T[K] extends RendererController<infer R> ? R : never;
-};
-
-type RendererTypesToControllers<T> = {
+type GetControllersType<T> = {
   [K in keyof T]: T[K] extends Renderer<infer R>
     ? RendererController<R>
     : never;
 };
 
-export type Patchers<
+export type RenderPayloadPatches<
   T extends { [key: string]: Renderer<any> }
-> = RendererTypesToPatchPayloads<RendererTypesToControllers<T>>;
+> = GetPayloadPatchType<GetControllersType<T>>;
 
 export class RenderDispatcher<
   TRendererTypes extends { [key: string]: Renderer<any> },
-  TRendererControllers = RendererTypesToControllers<TRendererTypes>,
-  TRendererPayloads = RendererTypesToPayloads<TRendererControllers>,
-  TRendererPatchPayloads = RendererTypesToPatchPayloads<TRendererControllers>
+  TRendererControllers = GetControllersType<TRendererTypes>,
+  TRendererPayloads = GetPayloadType<TRendererControllers>,
+  TRendererPatchPayloads = GetPayloadPatchType<TRendererControllers>
 > {
   isReady = false;
   resizeObserveUnsubscribe: Unsubscribe;
 
   constructor(
     hostElement: HTMLElement,
-    private renderers: TRendererControllers,
+    private rendererControllers: TRendererControllers,
     private onReadyToRender: () => void
   ) {
     this.resizeObserveUnsubscribe = observeElementBoundingRect(
@@ -51,17 +50,18 @@ export class RenderDispatcher<
     this.getRenders().forEach(r => r.setViewport(viewport));
   }
 
-  render(renderPayload: TRendererPayloads) {
-    Object.entries(this.renderers).forEach(([name, value]) => {
-      const payload = (renderPayload as any)[name];
-      if (payload) value.renderer.render(payload);
+  render(payload: TRendererPayloads) {
+    Object.entries(this.rendererControllers).forEach(([key, value]) => {
+      const controllerPayload = (payload as any)[key];
+      if (controllerPayload) value.renderer.render(controllerPayload);
     });
   }
 
-  renderPatches(renderPayloadPatches: TRendererPatchPayloads) {
-    Object.entries(this.renderers).forEach(([name, value]) => {
-      const patches = (renderPayloadPatches as any)[name];
-      if (patches) value.renderer.renderPatches(patches);
+  renderPatches(payloadPatches: TRendererPatchPayloads) {
+    Object.entries(this.rendererControllers).forEach(([key, value]) => {
+      const controllerPayloadPatches = (payloadPatches as any)[key];
+      if (controllerPayloadPatches)
+        value.renderer.renderPatches(controllerPayloadPatches);
     });
   }
 
@@ -78,7 +78,7 @@ export class RenderDispatcher<
   }
 
   private getRenders() {
-    return Object.values(this.renderers).map(v => v.renderer);
+    return Object.values(this.rendererControllers).map(rc => rc.renderer);
   }
 
   private resize(size: Size) {

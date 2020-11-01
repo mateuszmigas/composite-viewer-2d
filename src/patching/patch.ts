@@ -1,7 +1,5 @@
-import { isArrayPatch } from "./../common/typeGuards";
-import { hasProperty } from "../common/typeGuards";
-import { assertNever } from "../utils/typeHelpers";
-import { ValueOf } from "./common";
+import { isArrayPatch, assertNever } from "../utils/typeGuards";
+import { ValueOf } from "../utils/typeMapping";
 
 type PatchObject<P, V> = { path: P; value: V };
 type PatchArray<P, V> =
