@@ -7,7 +7,7 @@ Just a robot right? But it's rendered by 4 different renderers
 ![](https://github.com/mateuszmigas/viewer-2d/blob/master/docs/images/sync.gif)
 
 | Renderer | Part | Executor |
-| --- | --- |---|
+| --- | --- | --- |
 | PixiJS | eyes/mouth | Main thread |
 | HtmlDivElement | text | Main thread |
 | Canvas2D | borders | Web worker |
@@ -26,7 +26,7 @@ Applications that use some 2D rendering like:
 
 ### What value does it bring
 - manipulating different renderers with one manipulator
-- synchronizing rendering output [section here]
+- synchronizing rendering output [Render scheduler and synchronization](#render-scheduler-and-synchronization)
 - offscreen web worker rendering with the same API as the main thread, this can free your main thread and make the application more responsive
 - orchestrated offscreen web worker rendering with the same API as the main thread. It monitors web workers performance and spawns and destroys them as needed
 
@@ -57,7 +57,7 @@ export interface Renderer<T> {
 | `renderPatches` | Use it to update your render state. You could use render but there will be an overhead when passing data to web workers |
 | `setSize` | Resize the rendering area |
 | `setViewport` | Move and scale your objects: translate host/move camera or simply redraw objects if it's the best option |
-| `pickObjects` | Find and return objects requested by options ff your renderer supports picking objects |
+| `pickObjects` | Find and return objects requested by options if your renderer supports picking objects |
 | `dispose` | Unsubscribe from all events here and free resources
 
 Every renderer needs to have `RenderScheduler` as the first constructor param.
@@ -73,10 +73,10 @@ Factory methods
 | --- | --- |
 | create | Creates renderer on main thread |
 | createOffscreenIfAvailable | Creates renderer in web worker if supported, if not fallback to main thread |
-| createOrchestratedOffscreenIfAvailable | Creates and orchestrator that will monitor workers and spawn and destroy if needed [link here to orch] |
+| createOrchestratedOffscreenIfAvailable | Creates and orchestrator that will monitor workers and spawn and destroy if needed [Offscreen rendering orchestration](#offscreen-rendering-orchestration) |
 
-### RenderDispatcher
-Pass Html element where you want to render and renderers object and from now on you only interact with the dispatcher.
+### Render dispatcher
+This is an aggregator for renderers and should be used instead of interacting with renderers directly. It has similar API to Renderer<T>. Pass Html element where you want to render and renderers object to contructor and from now on you only interact with the dispatcher. 
 
 ### Viewport manipulation
 The library comes with default `ViewportManipulator` but you are free to create your own. All it does it listen to user events and invokes `setViewport` on the dispatcher.
@@ -85,6 +85,7 @@ The library comes with default `ViewportManipulator` but you are free to create 
 For your data to be delivered to the web workers it first needs to be serialized so it can go through `postMessage`. Passing the entire render objects every time something small changed is obviously an overkill and will not scale well. To address that there is a companion method `renderPatch` which contains only changes. 
 
 | render | renderPatch |
+| --- | --- |
 | Used to replace existing payload | Used to apply patches to existing payload |
 renderPatch does shallow patching, no support for deep patching. Consider you have an object:
 
@@ -108,13 +109,16 @@ You can do the following operations
 `renderPatch` also allows you to implement some more clever optimizations much easier. You know exactly which part of your render data changed so you can rerender only a portion of the screen.
 
 ### Offscreen rendering requirements
-This library can move the renderer to the web worker when created with `createOffscreenIfAvailable`/`createOrchestratedOffscreenIfAvailable` assuming the browser supports it. If it's not supported it will fallback to main thread rendering.
+This library can instantiate the renderer inside web worker when created with `createOffscreenIfAvailable`/`createOrchestratedOffscreenIfAvailable` assuming the browser supports it. If it's not supported it will fallback to main thread rendering.
 
 There are some requirements:
 1. Renderer constructor type:
 ```js
-constructor(renderScheduler: RenderScheduler, canvas: HTMLCanvasElement | OffscreenCanvas, ...otherParams: any)
-}
+constructor(
+  renderScheduler: RenderScheduler, 
+  canvas: HTMLCanvasElement | OffscreenCanvas, 
+  ...otherParams: any
+)
 ```
 | Param | Description |
 | --- | --- |
@@ -142,7 +146,7 @@ const createRenderWorker = (name: string) =>
 and that's it. Now your renderer can be used either on the main thread or in web workers
 
 ### Offscreen rendering orchestration
-It's possible to spawn multiple web workers for your renderer. When creating renderer with `createOrchestratedOffscreenIfAvailable` you have some extra options:
+It's possible to spawn multiple web workers for your renderer. Balancer will split your render among multiple renderer instances. When creating renderer with `createOrchestratedOffscreenIfAvailable` you have some extra options:
 
 | Option | Description | Default  |
 | --- | --- | --- |
@@ -158,7 +162,9 @@ It's possible to spawn multiple web workers for your renderer. When creating ren
 The default balancer will check `frameTimeTresholds` every time it runs and adds/removes web workers accordingly.
 ![](https://github.com/mateuszmigas/viewer-2d/blob/master/docs/images/orch.gif)
 
-### RenderScheduler
+Since the orchestrator can add workers on the fly, it will internally keep state to replicate and apply this state to new workers. This state refers to data passed in `Renderer` interface methods. There is special handling for `renderPatch`. You don't want to add to every instance of renderer because you have no way of distinguishing them inside renderer class and it would result in adding same items multiple times. To address this problem orchestrator will filter out `add` patches and apply them only to the first renderer instance.
+
+### Render scheduler and synchronization
 When rendering with multiple renderers in the main thread and web workers you may or may not want to synchronize stuff:
 
 | Scheduler type | Description |
@@ -225,6 +231,6 @@ yarn start
 
 ### Examples
 
-**This example does not use offscreen rendering because of hosting problems! Offscreen examples cmming soon**
+**This example does not use offscreen rendering because of hosting problems! Offscreen examples coming soon**
 
 [Example](https://codesandbox.io/s/sleepy-ganguly-kc24y?file=/src/Viewer2DHost.tsx)
