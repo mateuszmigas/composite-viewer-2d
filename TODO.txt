@@ -1,5 +1,4 @@
 todo mvp:
-- refactor profiling options
 - create example
 
 future: 

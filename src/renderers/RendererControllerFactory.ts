@@ -15,7 +15,6 @@ import {
 import { isOffscreenCanvasSupported } from "../utils/dom";
 import {
   OrchestratorBalancerOptions,
-  OrchestratorRendererOptions,
   WebWorkerOrchestratedRendererProxy,
 } from "./webWorkerOrchestratedRendererProxy";
 import { RendererExecutionEnvironment } from "./rendererExecutionEnvironment";

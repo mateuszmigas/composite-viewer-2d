@@ -86,11 +86,6 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
         [createCanvasChild(this.hostElement.current, 202)],
         true
       ),
-      // threejs: factory.createOffscreenIfAvailable(
-      //   ThreeJsRendererer,
-      //   [createCanvasChild(this.hostElement.current, 100)],
-      //   true
-      // ),
       threejs: factory.createOrchestratedOffscreenIfAvailable(
         ThreeJsRendererer,
         [],
