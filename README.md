@@ -16,7 +16,7 @@ Just a robot right? But it's rendered by 4 different renderers
 | ThreeJS | rectangles | Spread accross 1-4 web workers |
 
 
-## Quick Overview
+## Quick overview
 When you start developing software that shows some complex 2D views you will quickly realize that there is no library that is good at everything.
 While WebGL is good at displaying a large number of shapes it won't do well with lots of text or some editable controls. This library allows you to use different technologies together to get the best out of all worlds. It does not implement any renderers on its own altho it comes with some examples of how to integrate with popular ones. Its purpose is to be used in combination with existing graphic libraries like ThreeJS, PixiJS, and others. 
 
@@ -103,7 +103,7 @@ You can do the following operations
   { path: "layer", value: "someLayer" }, //replace object
   { path: "rectangles", op: "add", values: [rect3, rect5] }, //add two rectangles
   { path: "rectangles", op: "replace", index: 1,  values rect7 }, //replace second rectangle
-  { path: "rectangles", op: "replace", indexes: [0,1] } //remove first and second rectangle
+  { path: "rectangles", op: "remove", indexes: [0,1] } //remove first and second rectangle
 ]               
 ```
 
