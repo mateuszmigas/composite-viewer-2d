@@ -77,41 +77,42 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
     const rendererControllers = {
       pixijs: factory.create(
         PixijsRendererRenderer,
-        [createDivChild(this.hostElement.current, 103)],
+        [createDivChild(this.hostElement.current, 203)],
         true
       ),
       html: factory.create(
         HtmlRenderer,
-        [createDivChild(this.hostElement.current, 104)],
+        [createDivChild(this.hostElement.current, 204)],
         true
       ),
       canvas2d: factory.createOffscreenIfAvailable(
         Canvas2DRenderer,
-        [createCanvasChild(this.hostElement.current, 102)],
+        [createCanvasChild(this.hostElement.current, 202)],
         true
       ),
-      threejs: factory.createOffscreenIfAvailable(
-        ThreeJsRendererer,
-        [createCanvasChild(this.hostElement.current, 100)],
-        true
-      ),
-      // threejs: factory.createOrchestratedOffscreenIfAvailable(
+      // threejs: factory.createOffscreenIfAvailable(
       //   ThreeJsRendererer,
-      //   [],
-      //   index => this.createCanvas(200 + index),
-      //   {
-      //     balancedFields: ["rectangles"],
-      //     // frameTimeTresholds: {
-      //     //   tooSlow: 16,
-      //     //   tooFast: 5
-      //     // },
-      //     //initialExecutors:
-      //     minExecutors: 1,
-      //     maxExecutors: 4,
-      //     frequency: 4000,
-      //   },
+      //   [createCanvasChild(this.hostElement.current, 100)],
       //   true
       // ),
+      threejs: factory.createOrchestratedOffscreenIfAvailable(
+        ThreeJsRendererer,
+        [],
+        index =>
+          createCanvasChild(this.hostElement.current as any, 100 + index),
+        {
+          balancedFields: ["rectangles"],
+          // frameTimeTresholds: {
+          //   tooSlow: 16,
+          //   tooFast: 5
+          // },
+          //initialExecutors:
+          minExecutors: 1,
+          maxExecutors: 4,
+          frequency: 4000,
+        },
+        true
+      ),
     };
     perfMonitorPanel.addRenderers(rendererControllers);
 

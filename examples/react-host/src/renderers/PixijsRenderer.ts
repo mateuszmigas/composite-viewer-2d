@@ -26,7 +26,7 @@ export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
   private scheduleRender: () => void;
 
   constructor(
-    renderScheduler: RenderScheduler,
+    private renderScheduler: RenderScheduler,
     private element: HTMLDivElement
   ) {
     PIXI.utils.skipHello();
@@ -59,7 +59,16 @@ export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
 
   setViewport(viewport: Viewport) {
     this.viewport = { ...viewport };
-    this.scheduleRender();
+    this.graphics.position.set(
+      this.viewport.position.x,
+      this.viewport.position.y
+    );
+    this.graphics.scale.set(viewport.zoom);
+
+    if (this.payload && this.isVisible)
+      this.renderScheduler(() =>
+        this.application.renderer.render(this.application.stage)
+      );
   }
 
   render(payload: PixijsRendererPayload) {
@@ -78,8 +87,6 @@ export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
     if (!this.payload) return;
 
     this.graphics.clear();
-    const zoom = this.viewport.zoom;
-    const { x: xOffset, y: yOffset } = this.viewport.position;
 
     if (this.payload.ellipses) {
       this.payload.ellipses.forEach(ellipse => {
@@ -91,10 +98,10 @@ export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
           ])
         );
         this.graphics.drawEllipse(
-          ~~(xOffset + ellipse.x * zoom),
-          ~~(yOffset + ellipse.y * zoom),
-          ~~(ellipse.width * zoom),
-          ~~(ellipse.height * zoom)
+          ellipse.x,
+          ellipse.y,
+          ellipse.width,
+          ellipse.height
         );
 
         this.graphics.endFill();
