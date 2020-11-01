@@ -2,7 +2,8 @@
 
 This is an experimental project for bringing together different kinds of renderers and using them as one with offscreen rendering capabilities.
 
-//example here
+This example does not use offscreen rendering because of hosting problems!
+[Examples](https://codesandbox.io/s/sleepy-ganguly-kc24y?file=/src/Viewer2DHost.tsx)
 
 Just a robot right? But it's rendered by 4 different renderers
 
@@ -215,7 +216,7 @@ yarn start
 
 ### Browser support
 
-| Browser         | Is supported     |
+| Browser         | Supported     |
 | ----------------- | --------------------- |
 | Chrome | yes |
 | rest :) | not tested |
