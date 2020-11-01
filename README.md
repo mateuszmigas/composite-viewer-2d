@@ -2,9 +2,6 @@
 
 This is an experimental project for bringing together different kinds of renderers and using them as one with offscreen rendering capabilities.
 
-This example does not use offscreen rendering because of hosting problems!
-[Examples](https://codesandbox.io/s/sleepy-ganguly-kc24y?file=/src/Viewer2DHost.tsx)
-
 Just a robot right? But it's rendered by 4 different renderers
 
 ![](https://github.com/mateuszmigas/viewer-2d/blob/master/docs/images/sync.gif)
@@ -224,3 +221,9 @@ yarn start
 ### License
 
 [MIT](https://choosealicense.com/licenses/mit/)
+
+### Examples
+
+**This example does not use offscreen rendering because of hosting problems! Offscreen examples cmming soon**
+
+[Example](https://codesandbox.io/s/sleepy-ganguly-kc24y?file=/src/Viewer2DHost.tsx)
