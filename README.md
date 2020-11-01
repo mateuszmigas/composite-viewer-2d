@@ -2,35 +2,39 @@
 
 This is an experimental project for bringing together different kinds of renderers and using them as one with offscreen rendering capabilities.
 
+//example here
+
 Just a robot right? But it's rendered by 4 different renderers
 
 ![](https://github.com/mateuszmigas/viewer-2d/blob/master/docs/images/sync.gif)
 
-| Renderer         | Part     | Executor |
-| ----------------- | --------------------- |----------------|
+| Renderer | Part | Executor |
+| --- | --- |---|
 | PixiJS | eyes/mouth | Main thread |
 | HtmlDivElement | text | Main thread |
 | Canvas2D | borders | Web worker |
 | ThreeJS | rectangles | Spread accross 1-4 web workers |
 
-It can be used for:
+
+# Quick Overview
+When you start developing software that shows some complex 2D views you will quickly realize that there is no library that is good at everything.
+While WebGL is good at displaying large amount of shapes it won't do well with lots of text or some editable controls. This library allows you to use different technologies together to get best out of all worlds. It does not impmlement any renderers on it's own altho it comes with some examples how to integrate with pupular ones. It's purpose is to be used in combination with existing graphic libraries like ThreeJS, PixiJS and others. 
+
+## What it can be used for
+Applications that use some 2D rendering like:
 - graphs
 - architectual designers
 - 2D games
 
-If you start developing software that shows some complex 2D views you will quickly realize that there is no library that is good at everything.
-While WebGL is good at displaying large amount of shapes it won't do well with lots of text or some editable controls. This library allows you to use different technologies together to get best out of all worlds. It does not impmlement any renderers on it's own altho it comes with some examples how to integrate with pupular ones. It's purpose is to be used in combination with existing graphic libraries like ThreeJS, PixiJS and others. 
-
-# What can it do?
+## What value does it bring
 - manipulatting different renderers with one manipulator
 - synchronizing rendering output [section here]
-- offscreen web worker rendering with same API as main thread
-- orchestrated offscreen web worker rendering with same API as main thread. It monitors web workers performance and spawns and destroys them as needed 
+- offscreen web worker rendering with same API as main thread, this can free your main thread and make application more responsive
+- orchestrated offscreen web worker rendering with same API as main thread. It monitors web workers performance and spawns and destroys them as needed
 
-# How it works?
+# How does it work?
 
 ![](https://github.com/mateuszmigas/viewer-2d/blob/master/docs/diagrams/howitworks.svg)
-
 
 
 ## Browser support
@@ -40,34 +44,66 @@ While WebGL is good at displaying large amount of shapes it won't do well with l
 | Chrome | yes |
 | rest :) | not tested |
 
+# How to use it?
 
 ## Creating renderer
 
-Implement GenericRenderer interface
+Create a class that implements Renderer<T> interface where T is your payload
+```js
+export interface Renderer<T> {
+  render(payload: T): void;
+  renderPatches(payloadPatches: Patch<T>[]): void;
+  setSize(size: Size): void;
+  setViewport(viewport: Viewport): void;
+  setVisibility(visible: boolean): void;
+  pickObjects(options: PickingOptions): Promise<PickingResult[]>;
+  dispose(): void;
+}
+```
+| Param | Description |
+| --- | --- |
+| `render` | Your main render function. Pass all the data you need for rendering. If something never changes pass it in constructor |
+| `renderPatches` | Use it to update your render state. You could use render but there will be an overhead when passing data to web workers |
+| `setSize` | Resize the rendering area |
+| `setViewport` | Move and scale your objects: translate host/move camera or simply redraw objects if it's best option |
+| `pickObjects` | Find and return objects requested by options ff your renderer supports picking objects |
+| `dispose` | Unsubscribe from all events here and free resouces
 
 ## render vs renderPatch
+For your data to be delivered to webworker it first needs to be serialized so it can go through postMessage. Passing entire render object every time something small changed is obviously an overkill and will not scale well. To address that there is a companion method "renderPatch" which contains only "changes". 
 
-For your data to be delivered to webworker it first needs to be "serialized" so it can go through "postMessage". Passing entire render object every time something small changed is obviously an overkill and will not scale well. To address that there is a companion method "renderPatch" which contains only "changes"
+| render | renderPatch |
+| Used to replace existing payload | Used to apply patches to existing payload |
+renderPatch does shallow patching, no support for deep patching. Consider you have and object:
 
-The idea is as follows:
-First render - render
-Everything/almost everything changed - render
-Small changes, like moving few objects - patchRender
+```js
+const payload = {
+  layer: string,
+  rectangles: [rect1, rect2, rect]
+}
+```
 
-"renderPatch" also allows you to implement some more cleaver optimizations much easier. You know exacly which part of your render data changed so you can rerender
-only portion of the screen
-(example here)
+You can do the following operations
+```js
+[
+  { path: "layer", value: "someLayer" }, //replace object
+  { path: "rectangles", op: "add", values: [rect3, rect5] }, //add two rectangles
+  { path: "rectangles", op: "replace", index: 1,  values rect7 }, //replace second rectangle
+  { path: "rectangles", op: "replace", indexes: [0,1] } //remove first and second rectangle
+]               
+```
 
-## RenderScheduler
+"renderPatch" also allows you to implement some more cleaver optimizations much easier. You know exacly which part of your render data changed so you can rerender only portion of the screen.
 
+# RenderScheduler
 When rendering with multiple renderers in main thread and webworkers you may or may not want to synchronize stuff:
 
-| Scheduler         | Description                                                                  |
-| ----------------- | ---------------------------------------------------------------------------- |
-| `instantRenderer` | Initial values for part of the state that will be controlled by the hook     |
-| `rafScheduler`    | Current values of part of the state that will be controlled by the Component |
+| Scheduler type | Description |
+| --- | --- |
+| `onDemand` | When renderer requests render it will be instantly invoked |
+| `onDemandSynchronized` | When renderer requests render it will be scheduled for next animation frame (requestAnimationFrame) |
 
-Keep in mind this is optimistic synchronization, it will work for workers and main thread that meet the budget and they will not wait for others that are not.
+Keep in mind this is an optimistic synchronization, only renderers that are meeting the budget (<16fps) will be synchronized, rest will try to catch up. 
 
 ## Offscreen rendering requirements
 
@@ -126,12 +162,13 @@ There are two ways:
 - ....
 - ....
 
-## Typescript
+## Typescript support
 
-While it's possible to use it from Javascript it's recommended to use it with Typescript for best experience. It's obviously written in Typescript and favors compiletime checking over runtime exceptions.
+While it's possible to use it from Javascript it's recommended to use it with Typescript for best experience. It's obviously written in Typescript and come with type definitions. It favors compile-time checking over runtime exceptions.
 
-todo docs:
-
+## Performance
+If your rendering is GPU bound, like manipulating thousands of rectangles in shaders, this library will not help you much. 
+- making your , altho it might free your main thread in some cases. It should help with 
 
 ## Developing
 
@@ -142,3 +179,7 @@ Terminal 1 (main directory):
 Terminal 2 (examples\react-host directory):
 `yarn`
 `yarn start`
+
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)
