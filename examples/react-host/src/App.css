@@ -9,18 +9,8 @@ body,
   overflow-x: hidden;
   overflow-y: hidden;
   height: 100%;
-  display: grid;
-  grid-template-areas:
-    "title viewer"
-    "tools viewer";
-  grid-template-columns: 50px auto;
-  grid-template-rows: 50px auto;
-}
-
-.app-viewer {
-  grid-area: viewer;
-  background-color: dimgray;
-  user-select: none;
+  display: flex;
+  background-color: mediumslateblue;
 }
 
 .viewer-content {
@@ -28,4 +18,5 @@ body,
   height: 100%;
   width: 100%;
   outline: 0;
+  user-select: none;
 }

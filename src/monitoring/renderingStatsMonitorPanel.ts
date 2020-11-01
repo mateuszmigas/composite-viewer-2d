@@ -20,6 +20,7 @@ export class RenderingStatsMonitorPanel {
 
   constructor() {
     this.hostElement = createMainPanel();
+    this.hostElement.onclick = e => e.stopPropagation();
     this.contentElement = document.createElement("div");
     this.contentElement.style.display = "table";
     const headerButton = createHeaderButton();

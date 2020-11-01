@@ -26,8 +26,6 @@ type SuperViewerRenderers = {
   html: HtmlRenderer;
 };
 
-//type SuperViewerPatches = Patchers<SuperViewerRenderers>;
-
 export class Viewer2DHost extends React.PureComponent<{}, {}> {
   hostElement: React.RefObject<HTMLDivElement>;
   renderDispatcher!: RenderDispatcher<SuperViewerRenderers>;
@@ -56,7 +54,6 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
       (newViewport: Viewport) => this.renderDispatcher.setViewport(newViewport)
     );
 
-    //debug only
     const monitorPanel = new RenderingStatsMonitorPanel();
     this.hostElement.current.appendChild(monitorPanel.getElement());
 
@@ -117,7 +114,7 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
   }
 
   private fullRender = () => {
-    const { rectangles, ellipses, texts } = generateRandomRobots(100);
+    const { rectangles, ellipses, texts } = generateRandomRobots(50);
     this.renderDispatcher.render({
       canvas2d: {
         borders: rectangles,
@@ -140,44 +137,20 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
 
   render() {
     return (
-      <div className="viewer-content">
-        <div
-          className="viewer-content"
-          // onClick={() => {
-          //   console.log("clicked");
-          //   this.renderDispatcher
-          //     .pickObjects({
-          //       mode: "position",
-          //       position: { x: 100, y: 100 },
-          //     })
-          //     .then(result => console.log(result))
-          //     .catch(error => console.error(error));
-          // }}
-          onClick={() => {
-            console.log("clicked");
-
-            // const newRectangles = generateRandomRectangles(0);
-            // this.renderDispatcher.renderPatches({
-            //   canvas2d2: [
-            //     {
-            //       path: "rectangles",
-            //       op: "add",
-            //       values: [],
-            //     },
-            //   ],
-            //   threejs: [
-            //     {
-            //       path: "rectangles",
-            //       op: "add",
-            //     },
-            //       values: newRectangles,
-            //   ],
-            //      // });
-          }}
-          tabIndex={0}
-          ref={this.hostElement}
-        ></div>
-      </div>
+      <div
+        className="viewer-content"
+        onClick={() => {
+          const { rectangles, ellipses, texts } = generateRandomRobots(10);
+          this.renderDispatcher.renderPatches({
+            canvas2d: [{ path: "borders", op: "add", values: rectangles }],
+            threejs: [{ path: "rectangles", op: "add", values: rectangles }],
+            pixijs: [{ path: "ellipses", op: "add", values: ellipses }],
+            html: [{ path: "texts", op: "add", values: texts }],
+          });
+        }}
+        tabIndex={0}
+        ref={this.hostElement}
+      ></div>
     );
   }
 }
