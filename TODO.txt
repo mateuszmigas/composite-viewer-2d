@@ -1,7 +1,6 @@
 todo mvp:
 - refactor profiling options
 - refactor scheduler and remove continous
-- react plugin
 - make file casing consistent
 
 future: 
@@ -15,8 +14,7 @@ problems:
 - ios safari - kills inactive workers
 
 bugs:
-- fix not hiding performance monitor text
-- pixi goes out of sync after resize
+- pixi sometimes goes out of sync after resize
 
 profiling:
 - observer memory usage, no leaks
