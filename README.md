@@ -1,4 +1,4 @@
-# Viewer 2D
+# CompositeViewer2D
 
 This is an experimental project for bringing together different kinds of renderers and using them as one with offscreen rendering capabilities.
 
