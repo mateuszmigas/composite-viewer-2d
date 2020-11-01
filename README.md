@@ -33,9 +33,13 @@ While WebGL is good at displaying large amount of shapes it won't do well with l
 
 
 
-## How it works
+## Browser support
 
-graph here
+| Browser         | Is supported     |
+| ----------------- | --------------------- |
+| Chrome | yes |
+| rest :) | not tested |
+
 
 ## Creating renderer
 
@@ -127,3 +131,14 @@ There are two ways:
 While it's possible to use it from Javascript it's recommended to use it with Typescript for best experience. It's obviously written in Typescript and favors compiletime checking over runtime exceptions.
 
 todo docs:
+
+
+## Developing
+
+Terminal 1 (main directory):
+`yarn`
+`yarn run watch`
+
+Terminal 2 (examples\react-host directory):
+`yarn`
+`yarn start`
