@@ -1,6 +1,6 @@
 {
   "name": "@mateuszmigas/composite-viewer-2d",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "CompositeViewer2D",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
@@ -28,7 +28,9 @@
     "@types/uuid": "^8.3.0",
     "jest": "^26.4.2",
     "ts-jest": "^26.3.0",
-    "typescript": "4.0.2",
+    "typescript": "4.0.2"
+  },
+  "dependencies": {
     "uuid": "^8.3.1"
   },
   "publishConfig": {
