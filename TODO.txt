@@ -1,7 +1,6 @@
 todo mvp:
 - refactor profiling options
-- refactor scheduler and remove continous
-- make file casing consistent
+- create example
 
 future: 
 - render params in schedule renderer

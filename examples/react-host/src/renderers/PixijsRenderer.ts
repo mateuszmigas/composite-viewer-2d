@@ -10,7 +10,7 @@ import {
   Size,
   Viewport,
 } from "../viewer2d";
-import { EllipseShape, RectangleShape } from "./shapes";
+import { EllipseShape } from "./shapes";
 
 type PixijsRendererPayload = {
   ellipses: EllipseShape[];

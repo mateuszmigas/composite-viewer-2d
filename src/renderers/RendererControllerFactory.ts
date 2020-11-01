@@ -12,9 +12,12 @@ import {
   RenderSchedulerType,
   RenderScheduler,
 } from "./renderScheduler";
-import { RenderBalancerOptions } from "./renderingBalancer";
 import { isOffscreenCanvasSupported } from "../utils/dom";
-import { WebWorkerOrchestratedRendererProxy } from "./webWorkerOrchestratedRendererProxy";
+import {
+  OrchestratorBalancerOptions,
+  OrchestratorRendererOptions,
+  WebWorkerOrchestratedRendererProxy,
+} from "./webWorkerOrchestratedRendererProxy";
 import { RendererExecutionEnvironment } from "./rendererExecutionEnvironment";
 import { generateGuid } from "../utils/guid";
 import { Serializable } from "../utils/typeMapping";
@@ -28,7 +31,7 @@ export class RendererControllerFactory {
       profiling?: {
         onRendererStatsUpdated: (
           rendererId: string,
-          renderingStats: RenderingStats | RenderingStats[]
+          renderingStats: RenderingStats[]
         ) => void;
         updateStatsOnFrameCount?: number;
       };
@@ -45,10 +48,9 @@ export class RendererControllerFactory {
             renderScheduler,
             new RenderingStatsMonitor(
               renderingStats =>
-                options.profiling?.onRendererStatsUpdated(
-                  rendererId,
-                  renderingStats
-                ),
+                options.profiling?.onRendererStatsUpdated(rendererId, [
+                  renderingStats,
+                ]),
               {
                 updateStatsOnFrameCount:
                   options.profiling?.updateStatsOnFrameCount,
@@ -104,7 +106,9 @@ export class RendererControllerFactory {
               schedulerType: this.options.schedulerType,
               profiling: this.options.profiling
                 ? {
-                    onRendererStatsUpdated: (renderingStats: RenderingStats) =>
+                    onRendererStatsUpdated: (
+                      renderingStats: RenderingStats[]
+                    ) =>
                       this.options.profiling?.onRendererStatsUpdated(
                         id,
                         renderingStats
@@ -144,7 +148,7 @@ export class RendererControllerFactory {
     contructorFunction: ProxyRendererContructor<TRendererPayload, TParams>,
     contructorParams: Serializable<TParams>,
     canvasFactory: (index: number) => HTMLCanvasElement,
-    balancerOptions: RenderBalancerOptions<TRendererPayload>,
+    balancerOptions: OrchestratorBalancerOptions<TRendererPayload>,
     enabled: boolean
   ): RendererController<TRendererPayload> {
     const id = generateGuid();

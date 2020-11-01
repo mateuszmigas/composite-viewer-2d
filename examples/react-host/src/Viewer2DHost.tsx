@@ -98,11 +98,11 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
           createCanvasChild(this.hostElement.current as any, 100 + index),
         {
           balancedFields: ["rectangles"],
-          // frameTimeTresholds: {
-          //   tooSlow: 16,
-          //   tooFast: 5
-          // },
-          //initialExecutors:
+          frameTimeTresholds: {
+            tooSlowIfMoreThan: 16,
+            tooFastIfLessThan: 5,
+          },
+          initialExecutors: 2,
           minExecutors: 1,
           maxExecutors: 4,
           frequency: 4000,
@@ -122,11 +122,6 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
   }
 
   private fullRender = () => {
-    // const rectangles = generateRandomRectangles(10);
-    // const texts = rectangles.map((r, index) => ({
-    //   ...r,
-    //   text: `Shape:${index}`,
-    // }));
     const { rectangles, ellipses, texts } = generateRandomRobots(100);
     this.renderDispatcher.render({
       canvas2d: {

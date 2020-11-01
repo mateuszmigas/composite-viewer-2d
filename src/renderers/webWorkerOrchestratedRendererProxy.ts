@@ -1,6 +1,4 @@
-import { RenderSchedulerType } from "./renderScheduler";
 import { applyPatches, Patch } from "../patching/patch";
-import { createIndexArray } from "../utils/array";
 import { WebWorkerRendererProxy } from "./webWorkerRendererProxy";
 import { RenderingStats } from "../monitoring/renderingStatsMonitor";
 import { Renderer } from "./renderer";
@@ -10,49 +8,49 @@ import { Viewport } from "..";
 import { isArrayPatch } from "../utils/typeGuards";
 import { Nullable, Serializable } from "../utils/typeMapping";
 import { ProxyRendererContructor } from "./proxyTypes";
-import { RenderBalancerOptions, BalancerField } from "./renderingBalancer";
+import {
+  BalancerField,
+  createPayloadsSplitIntoChunks,
+  BalancerStats,
+  defaultBalancer,
+  BalancerOptions,
+  BalancerResult,
+} from "./renderingBalancer";
+import { RendererOptions } from "./rendererOptions";
 
-type OrchestratingRendererOptions<TRendererPayload> = {
-  schedulerType: RenderSchedulerType;
-  profiling?: {
-    onRendererStatsUpdated: (renderingStats: RenderingStats[]) => void;
-  };
-  balancerOptions: RenderBalancerOptions<TRendererPayload>;
+export type OrchestratorBalancerOptions<TRendererPayload> = BalancerOptions<
+  TRendererPayload
+> & {
+  initialExecutors?: number;
+  frequency?: number;
+  balancer?: <TRendererPyload>(
+    stats: BalancerStats[],
+    options: BalancerOptions<TRendererPyload>
+  ) => BalancerResult<TRendererPyload>;
 };
 
-export type PerformanceCheckOptions<TRendererPayload> = {
-  minExecutors: number;
-  maxExecutors: number;
-  balancedFields: BalancerField<TRendererPayload>[];
+export type OrchestratorRendererOptions<TRendererPayload> = RendererOptions & {
+  balancerOptions: OrchestratorBalancerOptions<TRendererPayload>;
 };
 
 const defaultOptions = {
+  initialExecutors: 1,
   minExecutors: 1,
-  maxExecutors: 8,
+  maxExecutors: 4,
   frequency: 5000,
+  frameTimeTresholds: {
+    tooSlowIfMoreThan: 16,
+    tooFastIfLessThan: 5,
+  },
+  balancer: defaultBalancer,
 };
-
-type PerformanceStats = {
-  framesCount: number;
-  totalRenderTime: number;
-  maxFrameTime: number;
-};
-
-type PerformanceCheckResult<TRendererPayload> =
-  | {
-      needsBalancing: false;
-    }
-  | {
-      needsBalancing: true;
-      payloadSelectors: ((payload: TRendererPayload) => unknown)[];
-    };
 
 type OrchestratedRenderer<TRendererPayload> = {
   readonly renderer: Renderer<TRendererPayload>;
   readonly canvas: HTMLCanvasElement;
   payloadSelector: (payload: TRendererPayload) => unknown;
-  profilerStats: PerformanceStats | null;
-  balancerStats: PerformanceStats | null;
+  profilerStats: BalancerStats | null;
+  balancerStats: BalancerStats | null;
 };
 
 export class WebWorkerOrchestratedRendererProxy<
@@ -61,7 +59,12 @@ export class WebWorkerOrchestratedRendererProxy<
 > implements Renderer<TRendererPayload> {
   orchestratedRenderers: OrchestratedRenderer<TRendererPayload>[];
   private balancerTimerHandler: number;
-  private balancerOptions: Required<RenderBalancerOptions<TRendererPayload>>;
+  private renderOptions: {
+    profiling?: {
+      onRendererStatsUpdated: (renderingStats: RenderingStats[]) => void;
+    };
+    balancerOptions: Required<OrchestratorBalancerOptions<TRendererPayload>>;
+  };
   private rendererFactory: (
     index: number,
     payloadSelector: (payload: TRendererPayload) => unknown
@@ -77,14 +80,19 @@ export class WebWorkerOrchestratedRendererProxy<
   constructor(
     workerFactory: (index: number) => Worker,
     canvasFactory: (index: number) => HTMLCanvasElement,
-    private options: OrchestratingRendererOptions<TRendererPayload>,
+    renderOptions: OrchestratorRendererOptions<TRendererPayload>,
     rendererConstructor: ProxyRendererContructor<TRendererPayload, TParams>,
     rendererParams: Serializable<TParams>
   ) {
-    this.balancerOptions = {
-      ...defaultOptions,
-      ...options.balancerOptions,
+    this.renderOptions = {
+      ...renderOptions,
+      balancerOptions: {
+        ...defaultOptions,
+        ...renderOptions.balancerOptions,
+      },
     };
+
+    console.log(this.renderOptions, "cc");
 
     this.rendererFactory = (
       index: number,
@@ -94,11 +102,11 @@ export class WebWorkerOrchestratedRendererProxy<
       const renderer = new WebWorkerRendererProxy(
         () => workerFactory(index),
         {
-          schedulerType: options.schedulerType,
+          schedulerType: renderOptions.schedulerType,
           profiling: {
-            onRendererStatsUpdated: (renderingStats: RenderingStats) => {
+            onRendererStatsUpdated: (renderingStats: RenderingStats[]) => {
               if (index <= this.orchestratedRenderers.length - 1)
-                this.updateStats(index, renderingStats);
+                this.updateStats(index, renderingStats[0]);
             },
           },
         },
@@ -115,9 +123,9 @@ export class WebWorkerOrchestratedRendererProxy<
       };
     };
 
-    this.orchestratedRenderers = createEventPayloads(
-      this.balancerOptions.maxExecutors,
-      this.balancerOptions.balancedFields
+    this.orchestratedRenderers = createPayloadsSplitIntoChunks(
+      this.renderOptions.balancerOptions.initialExecutors,
+      this.renderOptions.balancerOptions.balancedFields
     ).map((payloadSelector, index) =>
       this.rendererFactory(index, payloadSelector)
     );
@@ -125,7 +133,7 @@ export class WebWorkerOrchestratedRendererProxy<
     this.balancerTimerHandler = window.setInterval(() => {
       this.runBalancer();
       this.orchestratedRenderers.forEach(r => (r.balancerStats = null));
-    }, this.balancerOptions.frequency);
+    }, this.renderOptions.balancerOptions.frequency);
   }
 
   render(renderPayload: TRendererPayload): void {
@@ -140,7 +148,6 @@ export class WebWorkerOrchestratedRendererProxy<
 
     applyPatches(this.stateToReplicate.renderPayload, renderPayloadPatches);
 
-    this.options.balancerOptions.balancedFields;
     this.orchestratedRenderers.forEach((r, index) =>
       r.renderer.renderPatches(
         index === 0
@@ -187,7 +194,7 @@ export class WebWorkerOrchestratedRendererProxy<
   }
 
   private isBalancedField(path: keyof TRendererPayload) {
-    return this.options.balancerOptions.balancedFields.includes(
+    return this.renderOptions.balancerOptions.balancedFields.includes(
       path as BalancerField<TRendererPayload>
     );
   }
@@ -200,18 +207,9 @@ export class WebWorkerOrchestratedRendererProxy<
   private runBalancer() {
     if (this.orchestratedRenderers.some(r => r.balancerStats === null)) return;
 
-    console.log("running balancer");
-
-    const result = checkPerformance(
-      this.orchestratedRenderers.map(r => r.balancerStats as PerformanceStats),
-      //minExecutors: number;
-      //maxExecutors: number;
-      //balancedFields: BalancerFields<TRendererPayload>;
-      {
-        minExecutors: this.balancerOptions.minExecutors,
-        maxExecutors: this.balancerOptions.maxExecutors,
-        balancedFields: this.balancerOptions.balancedFields,
-      }
+    const result = this.renderOptions.balancerOptions.balancer(
+      this.orchestratedRenderers.map(r => r.balancerStats as BalancerStats),
+      { ...this.renderOptions.balancerOptions }
     );
 
     if (!result.needsBalancing) return;
@@ -263,7 +261,7 @@ export class WebWorkerOrchestratedRendererProxy<
   }
 
   private updateStats(index: number, renderingStats: RenderingStats) {
-    const accumulateStats = (ps: PerformanceStats) => {
+    const accumulateStats = (ps: BalancerStats) => {
       ps.framesCount++;
       ps.totalRenderTime += renderingStats.averageFrameTime;
       ps.maxFrameTime = Math.max(ps.maxFrameTime, renderingStats.maxFrameTime);
@@ -278,10 +276,10 @@ export class WebWorkerOrchestratedRendererProxy<
     this.orchestratedRenderers[index].balancerStats ??= emptyStats;
 
     accumulateStats(
-      this.orchestratedRenderers[index].profilerStats as PerformanceStats
+      this.orchestratedRenderers[index].profilerStats as BalancerStats
     );
     accumulateStats(
-      this.orchestratedRenderers[index].balancerStats as PerformanceStats
+      this.orchestratedRenderers[index].balancerStats as BalancerStats
     );
 
     this.notifyProfiler();
@@ -291,7 +289,7 @@ export class WebWorkerOrchestratedRendererProxy<
     if (this.orchestratedRenderers.some(r => r.profilerStats === null)) return;
 
     const stats = this.orchestratedRenderers.map(r => {
-      const profilerStats = r.profilerStats as PerformanceStats;
+      const profilerStats = r.profilerStats as BalancerStats;
       return {
         maxFrameTime: profilerStats.maxFrameTime,
         averageFrameTime:
@@ -299,7 +297,7 @@ export class WebWorkerOrchestratedRendererProxy<
       };
     });
 
-    this.options.profiling?.onRendererStatsUpdated(stats);
+    this.renderOptions.profiling?.onRendererStatsUpdated(stats);
     this.orchestratedRenderers.forEach(r => (r.profilerStats = null));
   }
 
@@ -309,62 +307,3 @@ export class WebWorkerOrchestratedRendererProxy<
     this.orchestratedRenderers.forEach(r => callback(r.renderer));
   }
 }
-
-const createEventPayloads = <TRendererPyload>(
-  length: number,
-  fields: BalancerField<TRendererPyload>[]
-) =>
-  createIndexArray(length).map(index => (payload: TRendererPyload) =>
-    fields.reduce(
-      (result, key) => {
-        const value = result[key];
-
-        if (Array.isArray(value))
-          Object.assign(result, { [key]: value.chunk(index, length) });
-
-        return result;
-      },
-      { ...payload }
-    )
-  );
-
-const checkPerformance = <TRendererPyload>(
-  rendererStats: PerformanceStats[],
-  options: PerformanceCheckOptions<TRendererPyload>
-): PerformanceCheckResult<TRendererPyload> => {
-  const averageFps =
-    rendererStats.reduce(
-      (sum, r) => sum + r.totalRenderTime / r.framesCount,
-      0
-    ) / rendererStats.length;
-
-  if (averageFps < 5) {
-    const newLength = rendererStats.length - 1;
-    return newLength < options.minExecutors
-      ? { needsBalancing: false }
-      : {
-          needsBalancing: true,
-          payloadSelectors: createEventPayloads(
-            newLength,
-            options.balancedFields
-          ),
-        };
-  }
-
-  if (averageFps > 16) {
-    const newLength = rendererStats.length + 1;
-    return newLength > options.maxExecutors
-      ? { needsBalancing: false }
-      : {
-          needsBalancing: true,
-          payloadSelectors: createEventPayloads(
-            newLength,
-            options.balancedFields
-          ),
-        };
-  }
-
-  return {
-    needsBalancing: false,
-  };
-};

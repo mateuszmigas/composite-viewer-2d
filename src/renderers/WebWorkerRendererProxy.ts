@@ -21,15 +21,9 @@ import {
   RenderSchedulerType,
 } from "./renderScheduler";
 import { Viewport } from "../manipulation/viewport";
+import { RendererOptions } from "./rendererOptions";
 
 type WebWorkerCompatibleRenderer = ProxyRendererContructor<any, any>;
-type ProxyOptions = {
-  schedulerType: RenderSchedulerType;
-  profiling?: {
-    onRendererStatsUpdated: (renderingStats: RenderingStats) => void;
-    updateStatsOnFrameCount?: number;
-  };
-};
 type RenderProxyReturnEvent<TPayload> = ProxyReturnEvent<Renderer<TPayload>>;
 type RenderProxyReturnEventListener<TPayload> = ProxyReturnEventListener<
   Renderer<TPayload>
@@ -67,7 +61,7 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
 
   constructor(
     workerFactory: () => Worker,
-    renderingOptions: ProxyOptions,
+    rendererOptions: RendererOptions,
     rendererConstructor: ProxyRendererContructor<TRendererPayload, TParams>,
     rendererParams: [HTMLCanvasElement, ...Serializable<TParams>]
   ) {
@@ -84,21 +78,21 @@ export class WebWorkerRendererProxy<TRendererPayload, TParams extends any[]>
           rendererConstructor.name,
           otherParams,
           {
-            schedulerType: renderingOptions.schedulerType,
-            enableProfiling: !!renderingOptions.profiling,
+            schedulerType: rendererOptions.schedulerType,
+            enableProfiling: !!rendererOptions.profiling,
             updateStatsOnFrameCount:
-              renderingOptions.profiling?.updateStatsOnFrameCount,
+              rendererOptions.profiling?.updateStatsOnFrameCount,
           },
         ],
       },
       [offscreenCanvas]
     );
 
-    if (renderingOptions.profiling) {
+    if (rendererOptions.profiling) {
       this.listenToMessage({
         type: "renderingStats",
         callback: stats =>
-          renderingOptions.profiling?.onRendererStatsUpdated(stats),
+          rendererOptions.profiling?.onRendererStatsUpdated([stats]),
       });
     }
   }
