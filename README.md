@@ -1,36 +1,45 @@
 # Viewer 2D
 
-This is experimental project for managing different kind of renderers to display 2D viewer.
-It can be used for:
+This is an experimental project for bringing together different kinds of renderers and using them as one with offscreen rendering capabilities.
 
+Just a robot right? But it's rendered by 4 different renderers
+
+![](https://github.com/mateuszmigas/viewer-2d/blob/master/docs/images/sync.gif)
+
+| Renderer         | Part     | Executor |
+| ----------------- | --------------------- |----------------|
+| PixiJS | eyes/mouth | Main thread |
+| HtmlDivElement | text | Main thread |
+| Canvas2D | borders | Web worker |
+| ThreeJS | rectangles | Spread accross 1-4 web workers |
+
+It can be used for:
 - graphs
 - architectual designers
 - 2D games
 
-It does not ipmlement any renderers on it's own. It's purpose is to be used in combination with existing graphic libraries like THREEJS, PixiJS and others.
-
-What value does it bring?
-
-- allows to use different libraries together with one manipulator
-- it can synchronize rendering output, html elements will be rendered at the same time and place as WebGL for instance
-- it can offload rendering to webworker
-- it can offload rendering to an orchestrator that spawn and destroy webworkers as needed monitoring their performance
-
 If you start developing software that shows some complex 2D views you will quickly realize that there is no library that is good at everything.
-While WebGL is good at displaying large amount of shapes it won't do well with lots of text or some editable controls. This library allows you to use different technologies together to get best out of all worlds.
+While WebGL is good at displaying large amount of shapes it won't do well with lots of text or some editable controls. This library allows you to use different technologies together to get best out of all worlds. It does not impmlement any renderers on it's own altho it comes with some examples how to integrate with pupular ones. It's purpose is to be used in combination with existing graphic libraries like ThreeJS, PixiJS and others. 
 
-Sample renderers:
+# What can it do?
+- manipulatting different renderers with one manipulator
+- synchronizing rendering output [section here]
+- offscreen web worker rendering with same API as main thread
+- orchestrated offscreen web worker rendering with same API as main thread. It monitors web workers performance and spawns and destroys them as needed 
 
-- Html
-- Canvas2D
-- WebGL
-- THREEJS
-- PixiJS
-  and more.
+# How it works?
 
-## How it works
+![](https://github.com/mateuszmigas/viewer-2d/blob/master/docs/diagrams/howitworks.svg)
 
-graph here
+
+
+## Browser support
+
+| Browser         | Is supported     |
+| ----------------- | --------------------- |
+| Chrome | yes |
+| rest :) | not tested |
+
 
 ## Creating renderer
 
@@ -122,3 +131,14 @@ There are two ways:
 While it's possible to use it from Javascript it's recommended to use it with Typescript for best experience. It's obviously written in Typescript and favors compiletime checking over runtime exceptions.
 
 todo docs:
+
+
+## Developing
+
+Terminal 1 (main directory):
+`yarn`
+`yarn run watch`
+
+Terminal 2 (examples\react-host directory):
+`yarn`
+`yarn start`
