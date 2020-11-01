@@ -74,7 +74,7 @@ export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
     }
   }
 
-  renderInternal = (time: number) => {
+  private renderInternal = (time: number) => {
     if (!this.payload) return;
 
     this.graphics.clear();

@@ -1,4 +1,4 @@
-import { createIndexArray } from "./../common/arrayExtensions";
+import { createIndexArray } from "../common/arrayExtensions";
 import { RenderingStats } from "../renderers/RenderingPerformanceMonitor";
 import { RendererController } from "../renderers/RendererController";
 import { Observable } from "../common/observable";

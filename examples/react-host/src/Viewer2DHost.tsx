@@ -1,8 +1,8 @@
-import { fail } from "assert";
 import React from "react";
 import { generateRandomRectangles } from "./helpers";
 import { createCanvasChild, createDivChild } from "./helpers/dom";
 import { Canvas2DRenderer } from "./renderers/Canvas2DRenderer";
+import { HtmlRenderer } from "./renderers/HtmlRenderer";
 import { PixijsRendererRenderer } from "./renderers/PixijsRenderer";
 import { ThreeJsRendererer } from "./renderers/ThreejsRenderer";
 import {
@@ -16,13 +16,14 @@ import {
 const createCanvasWorker = (name: string) =>
   new Worker("./renderers/renderWorker.template.ts", {
     type: "module",
-    name: `${name}.Renderer2D`,
+    name: `${name}.renderer`,
   });
 
 type SuperViewerRenderers = {
   threejs: ThreeJsRendererer;
   pixijs: PixijsRendererRenderer;
-  canvas2d2: Canvas2DRenderer;
+  canvas2d: Canvas2DRenderer;
+  html: HtmlRenderer;
 };
 
 //type SuperViewerPatches = Patchers<SuperViewerRenderers>;
@@ -70,19 +71,24 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
     );
 
     const rendererControllers = {
-      canvas2d2: factory.create(
-        Canvas2DRenderer,
-        [createCanvasChild(this.hostElement.current, 101)],
-        true
-      ),
       pixijs: factory.create(
         PixijsRendererRenderer,
-        [createDivChild(this.hostElement.current, 102)],
+        [createDivChild(this.hostElement.current, 101)],
+        true
+      ),
+      html: factory.create(
+        HtmlRenderer,
+        [createDivChild(this.hostElement.current, 104)],
+        true
+      ),
+      canvas2d: factory.createOffscreenIfAvailable(
+        Canvas2DRenderer,
+        [createCanvasChild(this.hostElement.current, 103)],
         true
       ),
       threejs: factory.createOffscreenIfAvailable(
         ThreeJsRendererer,
-        [createCanvasChild(this.hostElement.current, 103)],
+        [createCanvasChild(this.hostElement.current, 102)],
         true
       ),
       // threejs: factory.createOrchestratedOffscreenIfAvailable(
@@ -115,13 +121,14 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
   }
 
   private fullRender = () => {
-    const rectangles = generateRandomRectangles(10);
+    const rectangles = generateRandomRectangles(1000);
+    const texts = rectangles.map((r, index) => ({
+      ...r,
+      text: `Shape:${index}`,
+    }));
     this.renderDispatcher.render({
-      canvas2d2: {
+      canvas2d: {
         rectangles,
-        layers: "Esf",
-        executionTime: 12,
-        // cycki: () => "fe",
       },
       threejs: {
         rectangles,
@@ -129,13 +136,10 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
       pixijs: {
         rectangles,
       },
+      html: {
+        texts,
+      },
     });
-
-    // this.renderDispatcher.renderPatches({
-    //   canvas2d2: [
-    //     { path: "rectangles", op: "add", values: generateRandomRectangles(20) },
-    //   ],
-    // });
   };
 
   componentWillUnmount() {

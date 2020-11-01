@@ -14,8 +14,6 @@ import { RectangleShape } from "./shapes";
 
 type Canvas2DRendererPayload = {
   rectangles: RectangleShape[];
-  layers: string;
-  executionTime: number;
 };
 
 export class Canvas2DRenderer implements Renderer<Canvas2DRendererPayload> {
@@ -79,7 +77,7 @@ export class Canvas2DRenderer implements Renderer<Canvas2DRendererPayload> {
     }
   }
 
-  renderInternal = () => {
+  private renderInternal = () => {
     if (!this.payload) return;
 
     this.canvasContext.clearRect(0, 0, this.size.width, this.size.height);

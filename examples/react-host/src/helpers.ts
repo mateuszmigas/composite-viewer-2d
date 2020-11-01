@@ -19,8 +19,6 @@ const randomColor = (): Color => {
 
 export const randomRectangle = (): RectangleShape => {
   return {
-    type: "Rectangle",
-    containerId: "1",
     x: randomInteger(0, 2000),
     y: randomInteger(0, 2000),
     width: randomInteger(100, 200),
@@ -29,6 +27,8 @@ export const randomRectangle = (): RectangleShape => {
   };
 };
 
-export const generateRandomRectangles = (count: number = 100) => {
+export const generateRandomRectangles = (
+  count: number = 100
+): RectangleShape[] => {
   return repeat(count).map(() => randomRectangle());
 };
