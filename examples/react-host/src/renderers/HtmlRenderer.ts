@@ -66,7 +66,7 @@ export class HtmlRenderer implements Renderer<HtmlRendererPayload> {
     div.innerText = textShape.text;
     div.style.transform = `translate(${textShape.x}px, ${textShape.y}px)`;
     div.style.position = "absolute";
-    div.style.fontSize = "28px";
+    div.style.fontSize = `${textShape.fontSize}px`;
     this.element.appendChild(div);
   }
 

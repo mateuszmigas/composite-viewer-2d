@@ -13,7 +13,7 @@ import {
 import { RectangleShape } from "./shapes";
 
 type Canvas2DRendererPayload = {
-  rectangles: RectangleShape[];
+  borders: RectangleShape[];
 };
 
 export class Canvas2DRenderer implements Renderer<Canvas2DRendererPayload> {
@@ -85,17 +85,15 @@ export class Canvas2DRenderer implements Renderer<Canvas2DRendererPayload> {
     const zoom = this.viewport.zoom;
     const { x: xOffset, y: yOffset } = this.viewport.position;
 
-    if (this.payload.rectangles) {
-      this.payload.rectangles.forEach(rectangle => {
-        this.canvasContext.fillStyle = `rgb(
-            ${rectangle.color.r},
-            ${rectangle.color.g},
-            ${rectangle.color.b})`;
-        this.canvasContext.fillRect(
-          ~~(xOffset + rectangle.x * zoom),
-          ~~(yOffset + rectangle.y * zoom),
-          ~~(rectangle.width * zoom),
-          ~~(rectangle.height * zoom)
+    if (this.payload.borders) {
+      this.canvasContext.fillStyle = `rgb(0,0,0)`;
+      this.canvasContext.lineWidth = 5;
+      this.payload.borders.forEach(border => {
+        this.canvasContext.strokeRect(
+          ~~(xOffset + border.x * zoom),
+          ~~(yOffset + border.y * zoom),
+          ~~(border.width * zoom),
+          ~~(border.height * zoom)
         );
       });
     }

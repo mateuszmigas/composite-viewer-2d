@@ -1,5 +1,9 @@
 import React from "react";
-import { generateRandomRectangles } from "./helpers";
+import {
+  generateRandomRectangles,
+  generateRandomRobots,
+  generateRobot,
+} from "./helpers";
 import { createCanvasChild, createDivChild } from "./helpers/dom";
 import { Canvas2DRenderer } from "./renderers/Canvas2DRenderer";
 import { HtmlRenderer } from "./renderers/HtmlRenderer";
@@ -73,7 +77,7 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
     const rendererControllers = {
       pixijs: factory.create(
         PixijsRendererRenderer,
-        [createDivChild(this.hostElement.current, 101)],
+        [createDivChild(this.hostElement.current, 103)],
         true
       ),
       html: factory.create(
@@ -83,12 +87,12 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
       ),
       canvas2d: factory.createOffscreenIfAvailable(
         Canvas2DRenderer,
-        [createCanvasChild(this.hostElement.current, 103)],
+        [createCanvasChild(this.hostElement.current, 102)],
         true
       ),
       threejs: factory.createOffscreenIfAvailable(
         ThreeJsRendererer,
-        [createCanvasChild(this.hostElement.current, 102)],
+        [createCanvasChild(this.hostElement.current, 100)],
         true
       ),
       // threejs: factory.createOrchestratedOffscreenIfAvailable(
@@ -121,20 +125,21 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
   }
 
   private fullRender = () => {
-    const rectangles = generateRandomRectangles(1000);
-    const texts = rectangles.map((r, index) => ({
-      ...r,
-      text: `Shape:${index}`,
-    }));
+    // const rectangles = generateRandomRectangles(10);
+    // const texts = rectangles.map((r, index) => ({
+    //   ...r,
+    //   text: `Shape:${index}`,
+    // }));
+    const { rectangles, ellipses, texts } = generateRandomRobots(100);
     this.renderDispatcher.render({
       canvas2d: {
-        rectangles,
+        borders: rectangles,
       },
       threejs: {
         rectangles,
       },
       pixijs: {
-        rectangles,
+        ellipses,
       },
       html: {
         texts,
@@ -177,10 +182,10 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
             //     {
             //       path: "rectangles",
             //       op: "add",
-            //       values: newRectangles,
             //     },
+            //       values: newRectangles,
             //   ],
-            // });
+            //      // });
           }}
           tabIndex={0}
           ref={this.hostElement}

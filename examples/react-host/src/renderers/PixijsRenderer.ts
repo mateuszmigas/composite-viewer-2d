@@ -10,10 +10,10 @@ import {
   Size,
   Viewport,
 } from "../viewer2d";
-import { RectangleShape } from "./shapes";
+import { EllipseShape, RectangleShape } from "./shapes";
 
 type PixijsRendererPayload = {
-  rectangles: RectangleShape[];
+  ellipses: EllipseShape[];
 };
 
 export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
@@ -81,21 +81,22 @@ export class PixijsRendererRenderer implements Renderer<PixijsRendererPayload> {
     const zoom = this.viewport.zoom;
     const { x: xOffset, y: yOffset } = this.viewport.position;
 
-    if (this.payload.rectangles) {
-      this.payload.rectangles.forEach(rectangle => {
+    if (this.payload.ellipses) {
+      this.payload.ellipses.forEach(ellipse => {
         this.graphics.beginFill(
           PIXI.utils.rgb2hex([
-            rectangle.color.r / 256,
-            rectangle.color.g / 256,
-            rectangle.color.b / 256,
+            ellipse.color.r / 256,
+            ellipse.color.g / 256,
+            ellipse.color.b / 256,
           ])
         );
-        this.graphics.drawRect(
-          ~~(xOffset + rectangle.x * zoom),
-          ~~(yOffset + rectangle.y * zoom),
-          ~~(rectangle.width * zoom),
-          ~~(rectangle.height * zoom)
+        this.graphics.drawEllipse(
+          ~~(xOffset + ellipse.x * zoom),
+          ~~(yOffset + ellipse.y * zoom),
+          ~~(ellipse.width * zoom),
+          ~~(ellipse.height * zoom)
         );
+
         this.graphics.endFill();
       });
     }
