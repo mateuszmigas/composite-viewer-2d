@@ -92,8 +92,6 @@ export class WebWorkerOrchestratedRendererProxy<
       },
     };
 
-    console.log(this.renderOptions, "cc");
-
     this.rendererFactory = (
       index: number,
       payloadSelector: (payload: TRendererPayload) => unknown
