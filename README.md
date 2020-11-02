@@ -87,6 +87,7 @@ For your data to be delivered to the web workers it first needs to be serialized
 | render | renderPatch |
 | --- | --- |
 | Used to replace existing payload | Used to apply patches to existing payload |
+
 renderPatch does shallow patching, no support for deep patching. Consider you have an object:
 
 ```js
