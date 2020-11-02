@@ -236,5 +236,6 @@ yarn start
 ### Examples
 
 **This example does not use offscreen rendering because of hosting problems! Offscreen examples coming soon**
+**Don't use renderers from the example as benchmarks. They are intentionally not optimized to show simple usage. Please refer to specific renderer vendor for optimisations**
 
 [Example](https://codesandbox.io/s/sleepy-ganguly-kc24y?file=/src/Viewer2DHost.tsx)
