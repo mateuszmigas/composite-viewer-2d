@@ -175,6 +175,9 @@ When rendering with multiple renderers in the main thread and web workers you ma
 
 Keep in mind this is an optimistic synchronization, only renderers that are meeting the budget (<16fps) will be synchronized, rest will try to catch up.
 
+### Hit testing and picking object
+The library does not come with his own hit testing mechanism. It does provide async API to get hit testing result from all renderers and aggregates it into one so you can use hit testing library for each renderer.
+
 ### Monitoring performance
 Internally the library will monitor the performance of offscreen renderers when they are managed by the orchestrator. You can also monitor the performance of all workers with `RenderingStatsMonitorPanel`.
 
