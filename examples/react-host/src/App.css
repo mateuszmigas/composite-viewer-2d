@@ -9,8 +9,30 @@ body,
   overflow-x: hidden;
   overflow-y: hidden;
   height: 100%;
+  display: grid;
+  grid-template-areas: "tabs viewer";
+  grid-template-columns: 150px auto;
+}
+
+.app-viewer {
+  grid-area: viewer;
+  background-color: dimgray;
+  user-select: none;
   display: flex;
   background-color: mediumslateblue;
+}
+
+.app-tabs {
+  grid-area: tabs;
+  background-color: dimgray;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  background-color: black;
+}
+
+.app-tab-button {
+  height: 50px;
 }
 
 .viewer-content {
