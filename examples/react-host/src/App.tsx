@@ -1,15 +1,17 @@
 import React from "react";
 import "./App.css";
-import { Tab2 } from "./tabs/tab1";
-import { Tab1 } from "./tabs/tab2";
-import { Viewer2DHost } from "./Viewer2DHost";
+import { SharingResourcesExample } from "./tabs/SharingResources";
+import { SynchronizationExample } from "./tabs/Synchronization";
 
 const tabs = [
   {
-    name: "Main thread + workers mix",
-    view: () => <Viewer2DHost></Viewer2DHost>,
+    name: "Synchronized main thread with workers",
+    view: () => <SynchronizationExample></SynchronizationExample>,
   },
-  { name: "tab22", view: () => <Tab2></Tab2> },
+  {
+    name: "Multiple renderers per worker with shared resources",
+    view: () => <SharingResourcesExample></SharingResourcesExample>,
+  },
 ];
 
 const App = () => {

@@ -1,5 +1,5 @@
 import * as React from "react";
 
-export function Tab2() {
+export function SharingResourcesExample() {
   return <div>tab2</div>;
 }

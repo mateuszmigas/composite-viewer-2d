@@ -1,34 +1,34 @@
 import React from "react";
-import { generateRandomRobots } from "./generators";
-import { createCanvasChild, createDivChild } from "./helpers/dom";
-import { Canvas2DRenderer } from "./renderers/canvas2DRenderer";
-import { HtmlRenderer } from "./renderers/htmlRenderer";
-import { PixijsRendererRenderer } from "./renderers/pixijsRenderer";
-import { ThreeJsRendererer } from "./renderers/threejsRenderer";
+import { generateRandomRobots } from "../generators";
+import { createCanvasChild, createDivChild } from "../helpers/dom";
+import { Canvas2DRenderer } from "../renderers/canvas2DRenderer";
+import { HtmlRenderer } from "../renderers/htmlRenderer";
+import { PixijsRendererRenderer } from "../renderers/pixijsRenderer";
+import { ThreeJsRendererer } from "../renderers/threejsRenderer";
 import {
   RenderDispatcher,
   Viewport,
   ViewportManipulator,
   RendererControllerFactory,
   RenderingStatsMonitorPanel,
-} from "./viewer2d";
+} from "../viewer2d";
 
 const createCanvasWorker = (name: string) =>
-  new Worker("./renderers/renderWorker.template.ts", {
+  new Worker("./../renderers/renderWorker.template.ts", {
     type: "module",
     name: `${name}.renderer`,
   });
 
-type SuperViewerRenderers = {
+type Renderers = {
   threejs: ThreeJsRendererer;
   pixijs: PixijsRendererRenderer;
   canvas2d: Canvas2DRenderer;
   html: HtmlRenderer;
 };
 
-export class Viewer2DHost extends React.PureComponent<{}, {}> {
+export class SynchronizationExample extends React.PureComponent<{}, {}> {
   hostElement: React.RefObject<HTMLDivElement>;
-  renderDispatcher!: RenderDispatcher<SuperViewerRenderers>;
+  renderDispatcher!: RenderDispatcher<Renderers>;
   viewportManipulator!: ViewportManipulator;
 
   constructor(props: {}) {
@@ -104,7 +104,7 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
     };
     monitorPanel.addRenderers(rendererControllers);
 
-    this.renderDispatcher = new RenderDispatcher<SuperViewerRenderers>(
+    this.renderDispatcher = new RenderDispatcher<Renderers>(
       this.hostElement.current,
       rendererControllers,
       this.fullRender
