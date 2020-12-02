@@ -1,4 +1,4 @@
-import { createIndexArray } from "../utils/array";
+import * as ArrayUtils from "../utils/array";
 import { ArrayFieldsOnly } from "../utils/typeMapping";
 
 export type BalancerField<T> = keyof ArrayFieldsOnly<T>;
@@ -32,13 +32,15 @@ export const createPayloadsSplitIntoChunks = <TRendererPyload>(
   length: number,
   fields: BalancerField<TRendererPyload>[]
 ) =>
-  createIndexArray(length).map(index => (payload: TRendererPyload) =>
+  ArrayUtils.createIndexArray(length).map(index => (payload: TRendererPyload) =>
     fields.reduce(
       (result, key) => {
         const value = result[key];
 
         if (Array.isArray(value))
-          Object.assign(result, { [key]: value.chunk(index, length) });
+          Object.assign(result, {
+            [key]: ArrayUtils.chunk(value, index, length),
+          });
 
         return result;
       },

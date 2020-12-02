@@ -19,7 +19,7 @@ const createCanvasWorker = (name: string) =>
     name: `${name}.renderer`,
   });
 
-type SuperViewerRenderers = {
+type ViewerRenderers = {
   threejs: ThreeJsRendererer;
   pixijs: PixijsRendererRenderer;
   canvas2d: Canvas2DRenderer;
@@ -28,7 +28,7 @@ type SuperViewerRenderers = {
 
 export class Viewer2DHost extends React.PureComponent<{}, {}> {
   hostElement: React.RefObject<HTMLDivElement>;
-  renderDispatcher!: RenderDispatcher<SuperViewerRenderers>;
+  renderDispatcher!: RenderDispatcher<ViewerRenderers>;
   viewportManipulator!: ViewportManipulator;
 
   constructor(props: {}) {
@@ -104,7 +104,7 @@ export class Viewer2DHost extends React.PureComponent<{}, {}> {
     };
     monitorPanel.addRenderers(rendererControllers);
 
-    this.renderDispatcher = new RenderDispatcher<SuperViewerRenderers>(
+    this.renderDispatcher = new RenderDispatcher<ViewerRenderers>(
       this.hostElement.current,
       rendererControllers,
       this.fullRender

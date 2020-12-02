@@ -1,3 +1,4 @@
+import * as ArrayUtils from "../utils/array";
 export type Observer<T> = (value: T) => void;
 
 export class Observable<T> {
@@ -10,7 +11,7 @@ export class Observable<T> {
   }
 
   detach(observer: Observer<T>) {
-    this.observers.remove(observer);
+    ArrayUtils.remove(this.observers, observer);
   }
 
   setValue(newValue: T) {
